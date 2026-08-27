@@ -61,15 +61,15 @@ export function FieldOfficerCard() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Capture */}
-      <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+      <div className="card-marketing p-6 bg-canvas">
         <div className="mb-4 flex items-center justify-between">
-          <p className="eyebrow text-accent/70">Field Report · Capture</p>
+          <span className="caption-mono text-mute">FIELD REPORT · CAPTURE</span>
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold",
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium border",
               online
-                ? "bg-sev-low/10 text-sev-low"
-                : "bg-sev-high/10 text-sev-high",
+                ? "bg-canvas-soft-2 text-link border-hairline"
+                : "bg-canvas-soft-2 text-warning border-hairline",
             )}
           >
             {online ? <Wifi size={11} /> : <CloudOff size={11} />}
@@ -77,54 +77,54 @@ export function FieldOfficerCard() {
           </span>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           {CAPTURE_FIELDS.map((f) => (
             <div
               key={f.label}
-              className="flex items-center gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2.5"
+              className="flex items-center gap-3 rounded-lg border border-hairline bg-canvas-soft-2 px-3.5 py-2.5"
             >
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04] text-accent">
+              <span className="grid h-8 w-8 place-items-center rounded bg-canvas text-ink border border-hairline">
                 <f.icon size={15} />
               </span>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.12em] text-fg-dim">
+                <span className="caption-mono text-mute block text-[10px]">
                   {f.label}
-                </p>
-                <p className="text-[12px] font-medium text-fg">{f.value}</p>
+                </span>
+                <p className="body-sm font-medium text-ink">{f.value}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="mt-4 text-[11px] leading-relaxed text-fg-muted">
+        <p className="mt-4 body-sm text-body leading-relaxed">
           Reports are captured on-device and stored locally when connectivity
           drops — then synced automatically once a link returns.
         </p>
       </div>
 
       {/* Sync queue */}
-      <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+      <div className="card-marketing p-6 bg-canvas">
         <div className="mb-4 flex items-center justify-between">
-          <p className="eyebrow">Sync Queue</p>
-          <span className="numeric text-[11px] text-fg-dim">
-            {pending} pending
+          <span className="caption-mono text-mute">SYNC QUEUE</span>
+          <span className="caption-mono text-ink font-semibold">
+            {pending} PENDING
           </span>
         </div>
 
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {reports.map((r) => {
             const s = SEVERITY[r.severity];
             return (
               <li
                 key={r.id}
-                className="flex items-center gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-lg border border-hairline bg-canvas-soft-2 px-3.5 py-2.5"
               >
                 <span className={cn("h-2 w-2 shrink-0 rounded-full", s.dot)} />
                 <div className="min-w-0 flex-1">
-                  <p className="numeric truncate text-[12px] font-medium text-fg">
+                  <p className="numeric truncate body-sm font-semibold text-ink">
                     {r.id} · {r.incidentType}
                   </p>
-                  <p className="numeric truncate text-[10px] text-fg-dim">
+                  <p className="numeric truncate caption-mono text-mute text-[10px]">
                     {r.gps}
                   </p>
                 </div>
@@ -134,27 +134,27 @@ export function FieldOfficerCard() {
           })}
         </ul>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-5 flex gap-2">
           <button
             onClick={runSync}
             disabled={syncing || pending === 0}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-[12px] font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="button-primary inline-flex flex-1 items-center justify-center gap-2 text-sm disabled:opacity-40"
           >
             {syncing ? (
               <>
-                <Loader2 size={13} className="animate-spin" /> Syncing…
+                <Loader2 size={14} className="animate-spin" /> Syncing…
               </>
             ) : (
               <>
-                <RefreshCw size={13} /> Sync now
+                <RefreshCw size={14} /> Sync Now
               </>
             )}
           </button>
           <button
             onClick={goOffline}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-[12px] font-medium text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+            className="button-secondary inline-flex items-center justify-center gap-2 text-sm"
           >
-            <CloudOff size={13} /> Go offline
+            <CloudOff size={14} /> Go Offline
           </button>
         </div>
       </div>
@@ -164,10 +164,10 @@ export function FieldOfficerCard() {
 
 function SyncBadge({ status }: { status: SyncStatus }) {
   const map = {
-    offline: { label: "Offline", cls: "text-fg-dim", icon: CloudOff },
-    queued: { label: "Queued", cls: "text-sev-high", icon: CloudOff },
-    syncing: { label: "Syncing", cls: "text-accent", icon: Loader2 },
-    synced: { label: "Synced", cls: "text-sev-low", icon: Check },
+    offline: { label: "Offline", cls: "text-mute", icon: CloudOff },
+    queued: { label: "Queued", cls: "text-warning", icon: CloudOff },
+    syncing: { label: "Syncing", cls: "text-link", icon: Loader2 },
+    synced: { label: "Synced", cls: "text-ink", icon: Check },
   }[status];
   const Icon = map.icon;
   return (
@@ -178,7 +178,7 @@ function SyncBadge({ status }: { status: SyncStatus }) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0 }}
         className={cn(
-          "inline-flex items-center gap-1 text-[10px] font-semibold",
+          "inline-flex items-center gap-1 caption-mono text-[10px] font-semibold",
           map.cls,
         )}
       >
@@ -188,3 +188,4 @@ function SyncBadge({ status }: { status: SyncStatus }) {
     </AnimatePresence>
   );
 }
+

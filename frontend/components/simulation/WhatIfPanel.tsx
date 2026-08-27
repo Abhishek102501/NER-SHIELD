@@ -40,17 +40,17 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 sm:p-6">
+    <div className="card-marketing p-6 bg-canvas">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <p className="eyebrow mb-1 text-accent/70">What-If Scenario</p>
-          <h3 className="text-sm font-semibold text-fg">
+          <span className="caption-mono text-mute mb-1 block">WHAT-IF SCENARIO</span>
+          <h3 className="body-md font-semibold text-ink">
             Stress-test the forecast
           </h3>
         </div>
         <button
           onClick={reset}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-[11px] font-medium text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+          className="button-secondary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
         >
           <RotateCcw size={12} /> Reset
         </button>
@@ -76,17 +76,17 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
         </div>
 
         {/* Outcome */}
-        <div className="rounded-xl border border-white/8 bg-black/25 p-4">
+        <div className="rounded-lg border border-hairline bg-canvas-soft-2 p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="eyebrow">Current</p>
-              <span className="numeric text-2xl font-semibold text-fg-muted">
+              <span className="caption-mono text-mute block mb-1">CURRENT</span>
+              <span className="numeric text-2xl font-semibold text-body">
                 {base}%
               </span>
             </div>
-            <ArrowRight size={18} className="text-fg-dim" />
+            <ArrowRight size={18} className="text-mute" />
             <div className="text-right">
-              <p className="eyebrow">Projected</p>
+              <span className="caption-mono text-mute block mb-1">PROJECTED</span>
               <LiveNumber
                 value={projected}
                 suffix="%"
@@ -95,18 +95,18 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
             </div>
           </div>
 
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/8">
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-canvas border border-hairline">
             <motion.div
               className={cn("h-full rounded-full", sev.dot)}
               animate={{ width: `${projected}%` }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>
-          <p className="mt-2 text-[11px] text-fg-muted">
+          <p className="mt-2 body-sm text-body">
             {delta > 0 ? (
               <span className={sev.text}>▲ +{delta}% vs current forecast</span>
             ) : (
-              <span className="text-fg-dim">At current forecast levels</span>
+              <span className="text-mute">At current forecast levels</span>
             )}
           </p>
 
@@ -136,9 +136,9 @@ function Slider({
 }) {
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-[12px] text-fg-muted">{label}</span>
-        <span className="numeric rounded-md bg-accent/10 px-2 py-0.5 text-[12px] font-semibold text-accent">
+      <div className="mb-2 flex items-center justify-between body-sm">
+        <span className="text-body font-medium">{label}</span>
+        <span className="numeric rounded-full bg-canvas-soft-2 border border-hairline px-2.5 py-0.5 caption-mono text-ink">
           +{value}%
         </span>
       </div>
@@ -148,7 +148,7 @@ function Slider({
         max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="ns-range w-full"
+        className="ns-range w-full cursor-pointer accent-primary"
       />
     </div>
   );
@@ -164,15 +164,16 @@ function Impact({
   label: string;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-lg bg-white/[0.03] py-2.5">
-      <Icon size={14} className="text-sev-high" />
+    <div className="flex flex-col items-center rounded-md border border-hairline bg-canvas p-3">
+      <Icon size={14} className="text-warning mb-1" />
       <LiveNumber
         value={value}
-        className="numeric mt-1 text-lg font-semibold text-fg"
+        className="numeric text-lg font-semibold text-ink"
       />
-      <span className="text-[9px] uppercase tracking-[0.1em] text-fg-dim">
+      <span className="caption-mono text-[9px] text-mute">
         {label}
       </span>
     </div>
   );
 }
+

@@ -15,13 +15,13 @@ const ICONS: Record<ResponsePhase, LucideIcon> = {
 
 export function ResponsePipeline() {
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 sm:p-6">
-      <p className="eyebrow mb-5 text-accent/70">Operating Loop</p>
+    <div className="card-marketing p-6 sm:p-8 bg-canvas">
+      <span className="caption-mono text-mute mb-5 block">OPERATING LOOP</span>
       <div className="relative">
         {/* connecting track */}
-        <div className="absolute left-5 right-5 top-5 hidden h-px bg-white/10 sm:block">
+        <div className="absolute left-5 right-5 top-5 hidden h-px bg-hairline sm:block">
           <motion.div
-            className="h-full bg-gradient-to-r from-accent via-sev-high to-sev-critical"
+            className="h-full bg-gradient-to-r from-link via-warning to-sev-critical"
             initial={{ scaleX: 0 }}
             whileInView={{ scaleX: 1 }}
             viewport={REVEAL_VIEWPORT}
@@ -42,13 +42,13 @@ export function ResponsePipeline() {
                 transition={{ delay: 0.15 + i * 0.18, duration: 0.5 }}
                 className="relative flex flex-col items-center text-center sm:items-start sm:text-left"
               >
-                <span className="relative z-10 grid h-10 w-10 place-items-center rounded-full border border-white/12 bg-ink text-accent">
+                <span className="relative z-10 grid h-10 w-10 place-items-center rounded-full border border-hairline bg-canvas-soft text-primary shadow-sm">
                   <Icon size={17} />
                 </span>
-                <p className="mt-3 text-[13px] font-semibold text-fg">
+                <p className="mt-3 body-sm font-semibold text-ink">
                   {p.label}
                 </p>
-                <p className="mt-1 text-[11px] leading-snug text-fg-muted">
+                <p className="mt-1 body-sm text-body leading-snug">
                   {p.blurb}
                 </p>
               </motion.div>
@@ -59,3 +59,4 @@ export function ResponsePipeline() {
     </div>
   );
 }
+

@@ -23,34 +23,30 @@ export function ResponsePriority() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className={cn(
-              "relative h-full overflow-hidden rounded-2xl border bg-white/[0.02] p-6",
-              sev.border,
-            )}
+            className="card-marketing p-6 relative overflow-hidden bg-canvas"
           >
-            <span className={cn("absolute inset-x-0 top-0 h-0.5", sev.dot)} />
+            <span className={cn("absolute inset-x-0 top-0 h-1", sev.dot)} />
             <div className="flex items-center justify-between">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 caption-mono text-[10px] font-semibold",
                   sev.bgSoft,
-                  sev.text,
-                  featured.severity === "critical" && "crit-pulse",
+                  sev.text
                 )}
               >
                 <span className={cn("h-1.5 w-1.5 rounded-full", sev.dot)} />
-                {sev.label} Incident
+                {sev.label} INCIDENT
               </span>
-              <span className="numeric text-[11px] text-fg-dim">
-                Priority #{featured.priority}
+              <span className="caption-mono text-mute">
+                PRIORITY #{featured.priority}
               </span>
             </div>
 
-            <h3 className="mt-4 text-xl font-semibold text-fg">
+            <h3 className="mt-4 display-sm text-ink">
               {featured.title}
             </h3>
-            <p className="mt-1 flex items-center gap-1.5 text-[13px] text-fg-muted">
-              <MapPin size={13} className="text-accent" />
+            <p className="mt-1 flex items-center gap-1.5 body-sm text-body">
+              <MapPin size={14} className="text-primary" />
               {featured.location}
             </p>
 
@@ -69,15 +65,15 @@ export function ResponsePriority() {
               />
             </div>
 
-            <div className={cn("mt-5 rounded-xl border p-3", sev.border, sev.bgSoft)}>
-              <p className="eyebrow mb-1">Recommended Action</p>
-              <p className="text-[13px] font-medium text-fg">
+            <div className="mt-5 rounded-lg border border-hairline bg-canvas-soft-2 p-4">
+              <span className="caption-mono text-mute mb-1 block">RECOMMENDED ACTION</span>
+              <p className="body-sm font-medium text-ink">
                 {featured.recommendedAction}
               </p>
             </div>
 
-            <button className="mt-4 inline-flex items-center gap-2 rounded-lg bg-sev-critical px-4 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5">
-              <Send size={14} /> Dispatch response
+            <button className="mt-5 button-primary inline-flex items-center gap-2">
+              <Send size={14} /> Dispatch Response Unit
             </button>
           </motion.div>
         </AnimatePresence>
@@ -85,9 +81,9 @@ export function ResponsePriority() {
 
       {/* Queue */}
       <div className="lg:col-span-2">
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-3">
-          <p className="eyebrow px-2 py-2">Priority Queue</p>
-          <ul className="space-y-1.5">
+        <div className="card-marketing p-4 bg-canvas">
+          <span className="caption-mono text-mute mb-3 block px-2">PRIORITY QUEUE</span>
+          <ul className="space-y-2">
             {RESPONSE_INCIDENTS.map((inc) => {
               const s = SEVERITY[inc.severity];
               const active = inc.id === id;
@@ -96,30 +92,30 @@ export function ResponsePriority() {
                   <button
                     onClick={() => setId(inc.id)}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
+                      "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all cursor-pointer",
                       active
-                        ? "border-white/20 bg-white/[0.05]"
-                        : "border-transparent hover:bg-white/[0.03]",
+                        ? "border-primary bg-canvas shadow-sm"
+                        : "border-hairline bg-canvas-soft hover:border-hairline-strong hover:bg-canvas"
                     )}
                   >
                     <span
                       className={cn(
-                        "grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[11px] font-bold",
+                        "grid h-7 w-7 shrink-0 place-items-center rounded text-xs font-semibold numeric",
                         s.bgSoft,
-                        s.text,
+                        s.text
                       )}
                     >
                       {inc.priority}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[12px] font-medium text-fg">
+                      <p className="truncate body-sm font-semibold text-ink">
                         {inc.location}
                       </p>
-                      <p className="truncate text-[11px] text-fg-muted">
+                      <p className="truncate body-sm text-body">
                         {inc.title}
                       </p>
                     </div>
-                    <span className={cn("numeric text-[13px] font-semibold", s.text)}>
+                    <span className={cn("numeric body-sm font-semibold", s.text)}>
                       {inc.riskScore}%
                     </span>
                   </button>
@@ -147,14 +143,15 @@ function Metric({
   wide?: boolean;
 }) {
   return (
-    <div className={cn("rounded-lg bg-white/[0.03] px-3 py-2", wide && "col-span-2")}>
-      <p className="flex items-center gap-1 text-[9px] uppercase tracking-[0.12em] text-fg-dim">
+    <div className={cn("rounded-md border border-hairline bg-canvas-soft-2 px-3 py-2", wide && "col-span-2")}>
+      <span className="caption-mono text-mute flex items-center gap-1 text-[10px]">
         {icon}
         {label}
-      </p>
-      <p className={cn("numeric mt-0.5 text-sm font-semibold text-fg", accent)}>
+      </span>
+      <p className={cn("numeric mt-1 body-md font-semibold text-ink", accent)}>
         {value}
       </p>
     </div>
   );
 }
+
