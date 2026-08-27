@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe' --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=1440,900 --virtual-time-budget=8000 '--screenshot=C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Admin-desktop-NER-SHIELD\\\\d69d8496-bf69-4189-9022-63840563acf1\\\\scratchpad\\\\shot-1440.png' http://localhost:3000/)",
+      "Bash(echo \"exit=$?\")",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe' --headless --disable-gpu --no-sandbox --user-data-dir=C:/Users/Admin/AppData/Local/Temp/ns-edge-profile --hide-scrollbars --window-size=1440,900 --virtual-time-budget=9000 --screenshot=C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-desktop-NER-SHIELD/d69d8496-bf69-4189-9022-63840563acf1/scratchpad/shot-1440.png http://localhost:3000/)",
+      "Bash(node C:/Users/Admin/AppData/Local/Temp/ns-shots/drive.mjs)",
+      "Bash(echo \"---exit $?---\")",
+      "Bash(node *)",
+      "Bash(npm install *)"
+    ]
+  }
+}
