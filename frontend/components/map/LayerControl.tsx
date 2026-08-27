@@ -38,7 +38,7 @@ export function LayerControl() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 28 }}
-            className="glass-float absolute right-0 top-[calc(100%+8px)] z-20 w-60 rounded-xl p-3"
+            className="glass-float absolute left-0 top-[calc(100%+8px)] z-20 w-60 rounded-xl p-3"
           >
             <div className="mb-2 flex items-center justify-between">
               <span className="eyebrow">Map Layers</span>

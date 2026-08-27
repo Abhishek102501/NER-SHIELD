@@ -2,10 +2,9 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutPanelLeft, PanelRightOpen, Radar } from "lucide-react";
+import { CommandMap } from "@/components/map/CommandMap";
 import { LayerControl } from "@/components/map/LayerControl";
-import { MapControls } from "@/components/map/MapControls";
 import { MapLegend } from "@/components/map/MapLegend";
-import { MapShell } from "@/components/map/MapShell";
 import { PrimaryActions } from "@/components/map/PrimaryActions";
 import { FieldReportModal } from "@/components/reports/FieldReportModal";
 import { SimulationModal } from "@/components/simulation/SimulationModal";
@@ -67,11 +66,10 @@ function Shell() {
         {/* CENTER — map + bottom timeline */}
         <main className="relative flex min-h-0 flex-1 flex-col">
           <div className="relative min-h-0 flex-1 overflow-hidden">
-            <MapShell />
-            <MapControls />
+            <CommandMap />
             <MapLegend />
 
-            <div className="absolute right-3 top-3 z-20 flex items-start gap-2">
+            <div className="absolute left-3 top-3 z-20 flex items-start gap-2">
               <PrimaryActions />
               <LayerControl />
             </div>
