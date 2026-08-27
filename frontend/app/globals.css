@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+/* ============================================================
+   NER-SHIELD DESIGN SYSTEM
+   Premium disaster-intelligence command center tokens.
+   ============================================================ */
+@theme {
+  /* Base surfaces — near-black / charcoal / dark navy */
+  --color-ink: #05070e;
+  --color-ink-800: #070a13;
+  --color-ink-700: #0a0f1b;
+  --color-panel: #0b1120;
+  --color-panel-2: #0e1526;
+  --color-hairline: #1b2436;
+
+  /* Text */
+  --color-fg: #e8eef8;
+  --color-fg-muted: #97a3b8;
+  --color-fg-dim: #5f6c83;
+
+  /* System / AI accent (cool cyan) */
+  --color-accent: #22d3ee;
+  --color-accent-2: #38bdf8;
+  --color-accent-deep: #0e7490;
+
+  /* Emergency severity scale */
+  --color-sev-low: #22c55e;
+  --color-sev-moderate: #eab308;
+  --color-sev-high: #f97316;
+  --color-sev-critical: #ef4444;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --shadow-panel: 0 1px 0 0 rgb(255 255 255 / 0.03) inset,
+    0 20px 45px -20px rgb(0 0 0 / 0.75);
+  --shadow-float: 0 10px 30px -12px rgb(0 0 0 / 0.8);
+}
+
+/* ---------- Base ---------- */
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(900px 500px at 12% -8%, rgba(34, 211, 238, 0.08), transparent 60%),
+    radial-gradient(1100px 600px at 108% 12%, rgba(239, 68, 68, 0.06), transparent 55%),
+    radial-gradient(800px 800px at 50% 120%, rgba(56, 189, 248, 0.05), transparent 60%);
+  color: var(--color-fg);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, dark scrollbars for panels */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.22) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+/* ============================================================
+   REUSABLE UTILITIES
+   ============================================================ */
+
+/* Translucent dark glass panel */
+@utility glass {
+  background:
+    linear-gradient(180deg, rgba(20, 28, 46, 0.72) 0%, rgba(9, 13, 24, 0.78) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Lighter floating glass (controls, popovers) */
+@utility glass-float {
+  background:
+    linear-gradient(180deg, rgba(24, 33, 54, 0.82) 0%, rgba(12, 17, 30, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: var(--shadow-float);
+}
+
+/* Micro-label / eyebrow text */
+@utility eyebrow {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-fg-dim);
+  font-weight: 600;
+}
+
+/* Tabular figures for metrics/coordinates */
+@utility numeric {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Map placeholder background: dark geographic grid */
+@utility map-grid {
+  background-color: #060a14;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(56, 189, 248, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.028) 1px, transparent 1px);
+  background-size:
+    120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+
+/* ============================================================
+   ANIMATIONS (kept subtle & purposeful)
+   ============================================================ */
+@keyframes ns-pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: ns-pulse-ring 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes ns-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(56, 189, 248, 0.06) 45%,
+    rgba(56, 189, 248, 0.02) 55%,
+    transparent 80%
+  );
+  animation: ns-sweep 7s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes ns-crit-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+.crit-pulse {
+  animation: ns-crit-pulse 2.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring::after,
+  .sweep::after,
+  .crit-pulse {
+    animation: none;
+  }
+}
+
+/* ---------- Range slider (simulation controls) ---------- */
+.ns-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+.ns-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 2px solid #0b1120;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.ns-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.ns-range::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 2px solid #0b1120;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  cursor: pointer;
+}
