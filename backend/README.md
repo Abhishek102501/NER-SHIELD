@@ -986,12 +986,12 @@ The platform assists authorized decision-makers. It does not replace them.
 
 <table align="center">
 <tr><th colspan="2">👥 NER-SHIELD Team</th></tr>
-<tr><td><b>Team Lead</b></td><td><i>Name</i></td></tr>
-<tr><td><b>Member</b></td><td><i>Name</i></td></tr>
-<tr><td><b>Member</b></td><td><i>Name</i></td></tr>
-<tr><td><b>Member</b></td><td><i>Name</i></td></tr>
-<tr><td><b>Member</b></td><td><i>Name</i></td></tr>
-<tr><td><b>Member</b></td><td><i>Name</i></td></tr>
+<tr><td><b>Team Lead</b></td><td><i>Abhishek Dubey</i></td></tr>
+<tr><td><b>Member</b></td><td><i>Mansha Sharma</i></td></tr>
+<tr><td><b>Member</b></td><td><i>Aditya Garg</i></td></tr>
+<tr><td><b>Member</b></td><td><i>Abhinendra Pratap Singh</i></td></tr>
+<tr><td><b>Member</b></td><td><i>Ankit Gupta</i></td></tr>
+<tr><td><b>Member</b></td><td><i>Aman Prajapati</i></td></tr>
 </table>
 
 ---
