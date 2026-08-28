@@ -1,0 +1,24 @@
+# Test profile: boots the full application context without a PostgreSQL/PostGIS server.
+# An in-memory H2 database stands in for the datasource and Flyway is disabled, because
+# the migrations are PostGIS-specific. Tests that exercise real spatial SQL will need a
+# PostgreSQL instance and should declare it explicitly.
+spring:
+  datasource:
+    url: jdbc:h2:mem:nershield;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: false
+
+nershield:
+  cors:
+    allowed-origins: http://localhost:3000
+  ai:
+    base-url: http://localhost:8000
+  security:
+    jwt:
+      issuer: ner-shield-test
