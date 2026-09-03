@@ -93,7 +93,7 @@ function Shell() {
             )}
           </div>
 
-          <div className="glass z-10 h-[124px] shrink-0 border-t border-white/8 md:h-[150px]">
+          <div className="glass z-10 h-49 shrink-0 border-t border-white/8 md:h-58">
             <BottomTimeline />
           </div>
         </main>

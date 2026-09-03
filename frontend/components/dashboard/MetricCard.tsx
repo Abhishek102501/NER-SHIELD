@@ -3,15 +3,18 @@
 import { motion } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
+import { LiveNumber } from "@/components/ui/LiveNumber";
 import { SEVERITY, cn } from "@/lib/utils";
 import type { SystemMetric } from "@/types";
 
 interface MetricCardProps {
   metric: SystemMetric;
   index?: number;
+  /** When provided, the value animates on every change (live telemetry). */
+  liveValue?: number;
 }
 
-export function MetricCard({ metric, index = 0 }: MetricCardProps) {
+export function MetricCard({ metric, index = 0, liveValue }: MetricCardProps) {
   const sev = metric.severity ? SEVERITY[metric.severity] : null;
   const TrendIcon =
     metric.trend === "rising"
@@ -48,11 +51,19 @@ export function MetricCard({ metric, index = 0 }: MetricCardProps) {
         )}
       </div>
       <div className="mt-1.5 flex items-end justify-between gap-2 pl-2">
-        <AnimatedNumber
-          value={metric.value}
-          pad={2}
-          className="numeric text-2xl font-semibold leading-none text-fg"
-        />
+        {liveValue !== undefined ? (
+          <LiveNumber
+            value={liveValue}
+            pad={2}
+            className="numeric text-2xl font-semibold leading-none text-fg"
+          />
+        ) : (
+          <AnimatedNumber
+            value={metric.value}
+            pad={2}
+            className="numeric text-2xl font-semibold leading-none text-fg"
+          />
+        )}
         {metric.delta && (
           <span className="numeric text-[10px] text-fg-dim">{metric.delta}</span>
         )}

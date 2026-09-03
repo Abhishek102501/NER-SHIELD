@@ -4,6 +4,18 @@
  */
 export const API_BASE = "/api/v1";
 
+/**
+ * Base URL of the real NER-SHIELD Spring Boot backend (see `backend/`). Unlike
+ * `API_BASE` above — a speculative `/api/v1` namespace the mock layer resolves locally —
+ * this points at an actually-running service, so it's a full origin, configurable via
+ * `NEXT_PUBLIC_API_BASE_URL`, and mirrors the backend's own unversioned `/api/...` routes
+ * (e.g. `/api/health`, `/api/threats`).
+ */
+export const BACKEND_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
+export const THREATS_URL = `${BACKEND_BASE_URL}/api/threats`;
+
 export const ENDPOINTS = {
   riskZones: () => `${API_BASE}/risk/zones`,
   riskById: (id: string) => `${API_BASE}/risk/${id}`,

@@ -1,7 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, ChevronDown, MapPinned, Shield } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  MapPinned,
+  Settings,
+  Shield,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { StatusIndicator } from "@/components/dashboard/StatusIndicator";
 import { NOTIFICATIONS } from "@/data/region";
@@ -156,23 +164,80 @@ export function TopBar() {
         <LiveClock />
         <NotificationsButton />
 
-        {/* Profile */}
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-lg border border-white/10 py-1 pl-1 pr-2 transition-colors hover:bg-white/5"
-        >
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-accent/80 to-accent-deep text-[11px] font-bold text-black">
-            OC
-          </span>
-          <span className="hidden text-left leading-tight sm:block">
-            <span className="block text-[11px] font-semibold text-fg">
-              Ops Command
-            </span>
-            <span className="block text-[9px] text-fg-dim">Duty Officer</span>
-          </span>
-          <ChevronDown size={13} className="text-fg-dim" />
-        </button>
+        <ProfileMenu />
       </div>
     </header>
+  );
+}
+
+function ProfileMenu() {
+  const [open, setOpen] = useState(false);
+  const items = [
+    { icon: UserRound, label: "Profile" },
+    { icon: Settings, label: "Preferences" },
+    { icon: LogOut, label: "Sign out" },
+  ];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          "flex items-center gap-2 rounded-lg border py-1 pl-1 pr-2 transition-colors",
+          open ? "border-accent/40 bg-white/5" : "border-white/10 hover:bg-white/5",
+        )}
+      >
+        <span className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-accent/80 to-accent-deep text-[11px] font-bold text-black">
+          OC
+        </span>
+        <span className="hidden text-left leading-tight sm:block">
+          <span className="block text-[11px] font-semibold text-fg">
+            Ops Command
+          </span>
+          <span className="block text-[9px] text-fg-dim">Duty Officer</span>
+        </span>
+        <ChevronDown
+          size={13}
+          className={cn("text-fg-dim transition-transform", open && "rotate-180")}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <button
+              aria-label="Close menu"
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-30 cursor-default"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              className="glass-float absolute right-0 top-[calc(100%+10px)] z-40 w-48 rounded-xl p-2"
+            >
+              <div className="px-2 py-1.5">
+                <p className="text-[12px] font-semibold text-fg">Ops Command</p>
+                <p className="text-[10px] text-fg-dim">duty.officer@ner-shield</p>
+              </div>
+              <div className="my-1 h-px bg-white/8" />
+              {items.map((it) => (
+                <button
+                  key={it.label}
+                  onClick={() => setOpen(false)}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+                >
+                  <it.icon size={14} />
+                  {it.label}
+                </button>
+              ))}
+              <p className="px-2 pt-1 text-[9px] text-fg-dim">DEMO account</p>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

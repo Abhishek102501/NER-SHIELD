@@ -5,15 +5,9 @@ import { Activity, FlaskConical, Play, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { RISK_SCORE } from "@/data/risk";
+import { SCENARIOS } from "@/data/simulation";
 import { useCommand } from "@/lib/command-context";
 import { cn } from "@/lib/utils";
-
-const SCENARIOS = [
-  { id: "rainfall", label: "Rainfall Surge" },
-  { id: "cloudburst", label: "Cloudburst" },
-  { id: "seismic", label: "Seismic Trigger" },
-  { id: "custom", label: "Custom" },
-] as const;
 
 type Phase = "idle" | "running" | "done";
 

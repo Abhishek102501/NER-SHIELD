@@ -686,6 +686,60 @@ frontend/
 
 </details>
 
+**Backend implementation status** — the backend is in its **foundation phase**. What exists today:
+
+| Area | Status |
+| --- | --- |
+| Spring Boot application, starts and serves HTTP | Implemented |
+| `GET /api/health` + Actuator health | Implemented |
+| `GET /api/threats` — Global Threat Intelligence feed | Implemented (demo detection source) |
+| Global exception handling and error contract | Implemented |
+| CORS for the Next.js frontend | Implemented |
+| Stateless Spring Security chain (public health, everything else 401) | Implemented |
+| PostgreSQL + PostGIS datasource and Hibernate Spatial wiring | Implemented |
+| Flyway migrations (`V1` enables the PostGIS extension) | Implemented |
+| AI service HTTP client (`/health` call only) | Implemented |
+| JWT authentication | **Not implemented** — `JwtTokenProvider` defines the contract only |
+| User, incident, report, alert, gis, response, audit domains | **Not implemented** — packages reserved and documented |
+| WebSocket endpoints | **Not implemented** — the starter is on the classpath, no endpoints exist |
+| Python AI service | **Not implemented** — lives outside this repository |
+
+<details open>
+<summary><b>Current backend structure</b></summary>
+
+```text
+backend/
+├── pom.xml
+├── mvnw, mvnw.cmd, .mvn/          Maven wrapper (pinned to 3.9.14)
+├── .env.example                  Documented environment variables
+└── src/
+    ├── main/
+    │   ├── java/com/nershield/
+    │   │   ├── NERShieldApplication.java
+    │   │   ├── config/           CORS properties and policy
+    │   │   ├── common/           Error contract: ApiErrorResponse, GlobalExceptionHandler
+    │   │   ├── health/           GET /api/health
+    │   │   ├── security/         Security chain, JWT contract and properties
+    │   │   ├── ai/               AIService, AIClient, AIProperties, dto/
+    │   │   ├── threat/           Global Threat Intelligence: detection/, RiskClassifier,
+    │   │   │                     ThreatTransformer, ThreatService, ThreatController, dto/
+    │   │   ├── user/             (reserved)
+    │   │   ├── incident/         (reserved)
+    │   │   ├── report/           (reserved)
+    │   │   ├── alert/            (reserved)
+    │   │   ├── gis/              (reserved)
+    │   │   ├── response/         (reserved)
+    │   │   └── audit/            (reserved)
+    │   └── resources/
+    │       ├── application.yml
+    │       └── db/migration/V1__initial_schema.sql
+    └── test/
+        ├── java/com/nershield/   Context, health, security and configuration tests
+        └── resources/application-test.yml
+```
+
+</details>
+
 <details>
 <summary><b>Planned full-stack structure</b></summary>
 
@@ -854,14 +908,15 @@ gantt
 - Map navigation
 - Responsive resizing
 - Three.js / R3F dependencies
+- Java 21 + Spring Boot (foundation phase: health check, Global Threat Intelligence API, CORS, error contract)
+- PostgreSQL + PostGIS datasource wiring (no domain tables yet)
 
 </td>
 <td>
 
-- Java 21 + Spring Boot
-- Spring Security
+- Spring Security — full authentication (JWT contract defined, not wired in)
 - JWT / OAuth2
-- PostgreSQL + PostGIS
+- User, incident, report, alert, gis, response, audit domains
 - Python + FastAPI service
 - ML inference and training
 - Computer vision
@@ -888,6 +943,49 @@ gantt
 </td>
 </tr>
 </table>
+
+### Implemented backend endpoints
+
+#### `GET /api/threats` — public
+
+The Global Threat Intelligence feed the frontend's ThreatMap consumes:
+
+```json
+{
+  "meta": { "source": "demo", "generatedAt": "2026-09-03T07:48:48.800Z", "count": 8 },
+  "events": [
+    {
+      "id": "det-001",
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "locationAvailable": true,
+      "location": "New Delhi, Delhi",
+      "entity": "Credential",
+      "threatName": "Credential Policy Violation",
+      "risk": "high",
+      "timestamp": "2026-09-03T07:03:40.865Z",
+      "description": "A Credential detection triggered Policy Violation with 93% model confidence."
+    }
+  ]
+}
+```
+
+`meta.source` is `"demo"` until a real detection source (see `com.nershield.threat.detection.DetectionSource`)
+is wired in to replace `DemoDetectionSource` — the frontend uses this field to avoid ever
+labelling demonstration data as live. An event's `latitude`/`longitude` are present only
+when `locationAvailable` is `true`; the transformer never fabricates a location for a
+detection that didn't carry one. See `com.nershield.threat.package-info` for the full
+pipeline (`DetectionSource` → `RiskClassifier` + `ThreatTransformer` → `ThreatController`)
+and `RiskClassifier`'s Javadoc for the deterministic risk-scoring model.
+
+Public for the same reason `/api/health` is: no authentication mechanism is wired in yet
+for any route in this backend. Move it behind auth alongside every other domain once
+`JwtTokenProvider` is implemented.
+
+#### `GET /api/health` and `GET /actuator/health` — public
+
+`/api/health` reports only that the HTTP layer is serving; `/actuator/health` (Spring Boot
+Actuator) reports dependency health, including the database indicator.
 
 ---
 

@@ -1,411 +1,338 @@
 @import "tailwindcss";
 
 /* ============================================================
-   NER-SHIELD DESIGN SYSTEM (DESIGN.md - Vercel Spec)
+   NER-SHIELD DESIGN SYSTEM
+   Premium disaster-intelligence command center tokens.
    ============================================================ */
-:root {
-  /* Surface colors */
-  --canvas: #ffffff;
-  --canvas-soft: #fafafa;
-  --canvas-soft-2: #f4f4f5;
-  --primary: #18181b;
-  --ink: #09090b;
-  --on-primary: #ffffff;
-
-  /* Text colors */
-  --body: #52525b;
-  --mute: #71717a;
-  --hairline: #e4e4e7;
-  --hairline-strong: #a1a1aa;
-
-  /* Stacked Shadows from DESIGN.md */
-  --shadow-level-1: 0 0 0 1px rgba(0, 0, 0, 0.08);
-  --shadow-level-2: 0px 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.06);
-  --shadow-level-3: 0px 4px 12px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.06);
-  --shadow-level-4: 0px 8px 24px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
-  --shadow-level-5: 0px 16px 36px -8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08);
-}
-
-.dark {
-  /* True Deep Pitch Black Surfaces */
-  --canvas: #09090b;
-  --canvas-soft: #000000;
-  --canvas-soft-2: #121215;
-  --primary: #ffffff;
-  --ink: #fafafa;
-  --on-primary: #000000;
-
-  /* Dark mode text & hairlines */
-  --body: #a1a1aa;
-  --mute: #71717a;
-  --hairline: #27272a;
-  --hairline-strong: #3f3f46;
-
-  --shadow-level-1: 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-level-2: 0px 2px 8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-level-4: 0px 8px 32px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
 @theme {
-  /* Surface colors */
-  --color-canvas: var(--canvas);
-  --color-canvas-soft: var(--canvas-soft);
-  --color-canvas-soft-2: var(--canvas-soft-2);
-  --color-primary: var(--primary);
-  --color-ink: var(--ink);
-  --color-on-primary: var(--on-primary);
+  /* Base surfaces — near-black / charcoal / dark navy */
+  --color-ink: #05070e;
+  --color-ink-800: #070a13;
+  --color-ink-700: #0a0f1b;
+  --color-panel: #0b1120;
+  --color-panel-2: #0e1526;
+  --color-hairline: #1b2436;
 
-  /* Text colors */
-  --color-body: var(--body);
-  --color-mute: var(--mute);
-  --color-hairline: var(--hairline);
-  --color-hairline-strong: var(--hairline-strong);
+  /* Text */
+  --color-fg: #e8eef8;
+  --color-fg-muted: #97a3b8;
+  --color-fg-dim: #5f6c83;
 
-  /* Brand Mesh Gradient Stops */
-  --color-grad-develop-start: #007cf0;
-  --color-grad-develop-end: #00dfd8;
-  --color-grad-preview-start: #7928ca;
-  --color-grad-preview-end: #ff0080;
-  --color-grad-ship-start: #ff4d4d;
-  --color-grad-ship-end: #f9cb28;
-  --color-cyan: #50e3c2;
-  --color-link: #0070f3;
-
-  /* Dark mode / Polarity flip tokens */
-  --color-dark-ink: #000000;
-  --color-dark-panel: #09090b;
-  --color-dark-hairline: #27272a;
+  /* System / AI accent (cool cyan) */
+  --color-accent: #22d3ee;
+  --color-accent-2: #38bdf8;
+  --color-accent-deep: #0e7490;
 
   /* Emergency severity scale */
-  --color-sev-low: #0070f3;
-  --color-sev-moderate: #f5a623;
+  --color-sev-low: #22c55e;
+  --color-sev-moderate: #eab308;
   --color-sev-high: #f97316;
-  --color-sev-critical: #ee0000;
+  --color-sev-critical: #ef4444;
 
-  /* Fonts */
-  --font-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), JetBrains Mono, monospace;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --shadow-panel: 0 1px 0 0 rgb(255 255 255 / 0.03) inset,
+    0 20px 45px -20px rgb(0 0 0 / 0.75);
+  --shadow-float: 0 10px 30px -12px rgb(0 0 0 / 0.8);
 }
 
-/* Base styles */
+/* ---------- Base ---------- */
 html {
+  color-scheme: dark;
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
-  background-color: var(--color-canvas-soft);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-
-/* Liquid Glass Utilities */
-@utility liquid-glass {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border-bottom: 1px solid var(--color-hairline);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
-}
-
-.dark .liquid-glass {
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-}
-
-@utility gradient-brand {
-  background-image: linear-gradient(135deg, #007cf0 0%, #00dfd8 50%, #7928ca 100%);
-}
-
-@utility gradient-accent {
-  background-image: linear-gradient(135deg, #7928ca 0%, #ff0080 100%);
-}
-
-@utility gradient-fire {
-  background-image: linear-gradient(135deg, #ff4d4d 0%, #f9cb28 100%);
-}
-
-@utility gradient-text {
-  background-image: linear-gradient(135deg, #007cf0 0%, #00dfd8 35%, #7928ca 70%, #ff0080 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-
-
-/* ============================================================
-   TYPOGRAPHY HIERARCHY (DESIGN.md)
-   ============================================================ */
-@utility display-xl {
-  font-family: var(--font-sans);
-  font-size: 48px;
-  font-weight: 600;
-  line-height: 52px;
-  letter-spacing: -2.4px;
-}
-
-@utility display-lg {
-  font-family: var(--font-sans);
-  font-size: 32px;
-  font-weight: 600;
-  line-height: 40px;
-  letter-spacing: -1.28px;
-}
-
-@utility display-md {
-  font-family: var(--font-sans);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 32px;
-  letter-spacing: -0.96px;
-}
-
-@utility display-sm {
-  font-family: var(--font-sans);
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 28px;
-  letter-spacing: -0.6px;
-}
-
-@utility body-lg {
-  font-family: var(--font-sans);
-  font-size: 18px;
-  font-weight: 400;
-  line-height: 28px;
-  letter-spacing: 0px;
-}
-
-@utility body-md {
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 24px;
-}
-
-@utility body-sm {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: -0.28px;
-}
-
-@utility caption-mono {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 16px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-@utility code-text {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 20px;
-}
-
-/* Tabular figures for coordinates & live data */
-@utility numeric {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-}
-
-/* ============================================================
-   DESIGN.md MESH GRADIENT & CARD CHROMES
-   ============================================================ */
-@utility mesh-gradient {
+  background-color: var(--color-ink);
   background-image:
-    radial-gradient(at 0% 0%, rgba(0, 124, 240, 0.25) 0px, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(121, 40, 202, 0.22) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(255, 0, 128, 0.25) 0px, transparent 50%),
-    radial-gradient(at 80% 50%, rgba(80, 227, 194, 0.18) 0px, transparent 50%),
-    radial-gradient(at 20% 50%, rgba(249, 203, 40, 0.15) 0px, transparent 50%);
+    radial-gradient(900px 500px at 12% -8%, rgba(34, 211, 238, 0.08), transparent 60%),
+    radial-gradient(1100px 600px at 108% 12%, rgba(239, 68, 68, 0.06), transparent 55%),
+    radial-gradient(800px 800px at 50% 120%, rgba(56, 189, 248, 0.05), transparent 60%);
+  background-attachment: fixed;
+  color: var(--color-fg);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-@utility card-marketing {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  border-radius: 8px;
-  border: 1px solid var(--color-hairline);
-  box-shadow: var(--shadow-level-2);
-}
-
-@utility card-marketing-lg {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  border-radius: 12px;
-  border: 1px solid var(--color-hairline);
-  box-shadow: var(--shadow-level-4);
-}
-
-@utility card-polarity-dark {
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  border-radius: 12px;
-  box-shadow: var(--shadow-level-4);
-}
-
-/* CTAs from DESIGN.md */
-@utility button-primary {
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 24px;
-  border-radius: 100px;
-  padding: 12px 24px;
-  transition: all 0.15s ease;
-  &:hover {
-    opacity: 0.88;
-    transform: translateY(-1px);
-  }
-}
-
-@utility button-secondary {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 24px;
-  border-radius: 100px;
-  padding: 12px 24px;
-  border: 1px solid var(--color-hairline);
-  box-shadow: var(--shadow-level-1);
-  transition: all 0.15s ease;
-  &:hover {
-    background-color: var(--color-canvas-soft-2);
-    border-color: var(--color-hairline-strong);
-    color: var(--color-ink);
-    transform: translateY(-1px);
-  }
-}
-
-.dark .button-secondary:hover {
-  background-color: #1c1c22;
-  border-color: #52525b;
-  color: #ffffff;
-}
-
-@utility tab-ghost {
-  background-color: var(--color-canvas);
-  color: var(--color-body);
-  font-size: 14px;
-  font-weight: 400;
-  border-radius: 64px;
-  padding: 6px 16px;
-  border: 1px solid transparent;
-  transition: all 0.15s ease;
-  &:hover {
-    color: var(--color-ink);
-    background-color: var(--color-canvas-soft-2);
-  }
-  &[data-state="active"], &.active {
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
-    border-color: var(--color-hairline-strong);
-    font-weight: 500;
-    box-shadow: var(--shadow-level-1);
-  }
-}
-
-@utility badge-secondary {
-  background-color: var(--color-canvas-soft-2);
-  color: var(--color-body);
-  font-size: 12px;
-  font-weight: 400;
-  border-radius: 9999px;
-  padding: 2px 10px;
-  border: 1px solid var(--color-hairline);
-}
-
-@utility form-input {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  border: 1px solid var(--color-hairline);
-  font-size: 14px;
-  border-radius: 6px;
-  padding: 0 12px;
-  height: 40px;
-  transition: border-color 0.15s ease;
-  &:focus {
-    outline: none;
-    border-color: var(--color-hairline-strong);
-  }
-}
-
-/* Nav CTAs from DESIGN.md */
-@utility nav-cta-signup {
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: 14px;
-  font-weight: 500;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  &:hover {
-    opacity: 0.88;
-  }
-}
-
-@utility nav-cta-login {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  font-size: 14px;
-  font-weight: 500;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 6px;
-  border: 1px solid var(--color-hairline);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  &:hover {
-    background-color: var(--color-canvas-soft-2);
-  }
-}
-
-@utility nav-cta-ask-ai {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  border: 1px solid var(--color-hairline);
-  font-size: 14px;
-  font-weight: 500;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  &:hover {
-    border-color: var(--color-hairline-strong);
-  }
-}
-
-/* Scrollbars */
+/* Thin, dark scrollbars for panels */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(23, 23, 23, 0.2) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.22) transparent;
 }
 *::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(23, 23, 23, 0.2);
+  background: rgba(148, 163, 184, 0.2);
   border-radius: 9999px;
 }
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.35);
+}
 
+/* ============================================================
+   REUSABLE UTILITIES
+   ============================================================ */
+
+/* Translucent dark glass panel */
+@utility glass {
+  background:
+    linear-gradient(180deg, rgba(20, 28, 46, 0.72) 0%, rgba(9, 13, 24, 0.78) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Lighter floating glass (controls, popovers) */
+@utility glass-float {
+  background:
+    linear-gradient(180deg, rgba(24, 33, 54, 0.82) 0%, rgba(12, 17, 30, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: var(--shadow-float);
+}
+
+/* Micro-label / eyebrow text */
+@utility eyebrow {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-fg-dim);
+  font-weight: 600;
+}
+
+/* Tabular figures for metrics/coordinates */
+@utility numeric {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Map placeholder background: dark geographic grid */
+@utility map-grid {
+  background-color: #060a14;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(56, 189, 248, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.028) 1px, transparent 1px);
+  background-size:
+    120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+
+/* ============================================================
+   ANIMATIONS (kept subtle & purposeful)
+   ============================================================ */
+@keyframes ns-pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: ns-pulse-ring 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes ns-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(56, 189, 248, 0.06) 45%,
+    rgba(56, 189, 248, 0.02) 55%,
+    transparent 80%
+  );
+  animation: ns-sweep 7s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes ns-crit-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+.crit-pulse {
+  animation: ns-crit-pulse 2.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring::after,
+  .sweep::after,
+  .crit-pulse {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   THREAT MAP (Leaflet / OpenStreetMap)
+   ============================================================ */
+
+/* Recolor stock OSM raster tiles to match the dark command-center theme. */
+.ns-threatmap .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.92) saturate(0.6);
+}
+.ns-threatmap {
+  background: #060a14;
+}
+.ns-threatmap .leaflet-control-attribution {
+  background: rgba(9, 13, 24, 0.6);
+  color: var(--color-fg-dim);
+}
+
+/* Custom risk marker */
+.ns-threat-marker {
+  background: transparent;
+  border: none;
+}
+.ns-threat-marker-dot {
+  position: relative;
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--marker-color);
+  color: var(--marker-color);
+  border: 1.5px solid rgba(5, 7, 14, 0.9);
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--marker-color) 60%, transparent);
+  cursor: pointer;
+}
+
+/* Popup shell restyled as a glass panel */
+.ns-threat-popup .leaflet-popup-content-wrapper {
+  background: linear-gradient(180deg, rgba(20, 28, 46, 0.94) 0%, rgba(9, 13, 24, 0.96) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  box-shadow: var(--shadow-float);
+  color: var(--color-fg);
+  padding: 2px;
+}
+.ns-threat-popup .leaflet-popup-content {
+  margin: 10px 12px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+.ns-threat-popup .leaflet-popup-tip {
+  background: rgba(9, 13, 24, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+/* ============================================================
+   COMMAND MAP — intelligence markers (MapLibre DOM markers)
+   ============================================================ */
+
+/* Muted, dark base for the MapLibre canvas itself before tiles paint in. */
+.ns-command-map .maplibregl-canvas {
+  background: #05070e;
+}
+.ns-command-map .maplibregl-ctrl-attrib {
+  background: rgba(9, 13, 24, 0.55);
+}
+.ns-command-map .maplibregl-ctrl-attrib a {
+  color: #5f6c83;
+}
+
+.ns-intel-marker {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  color: var(--marker-color);
+}
+.ns-intel-marker-glow {
+  position: absolute;
+  inset: -11px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--marker-color) 0%, transparent 70%);
+  opacity: 0.35;
+  filter: blur(1px);
+  transition: opacity 0.2s ease;
+}
+.ns-intel-marker-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+}
+.ns-intel-marker-core {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--marker-color);
+  border: 2px solid #05070e;
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--marker-color) 70%, transparent);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ns-intel-marker-core svg {
+  width: 10px;
+  height: 10px;
+}
+.ns-intel-marker:hover .ns-intel-marker-core {
+  transform: scale(1.12);
+}
+.ns-intel-marker.is-active .ns-intel-marker-core {
+  transform: scale(1.28);
+  box-shadow: 0 0 16px 3px color-mix(in srgb, var(--marker-color) 85%, transparent);
+}
+.ns-intel-marker.is-active .ns-intel-marker-glow {
+  opacity: 0.6;
+}
+.ns-intel-marker.is-sensor .ns-intel-marker-core {
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--marker-color) 55%, transparent);
+}
+
+/* ---------- Range slider (simulation controls) ---------- */
+.ns-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+.ns-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 2px solid #0b1120;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.ns-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.ns-range::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 2px solid #0b1120;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  cursor: pointer;
+}

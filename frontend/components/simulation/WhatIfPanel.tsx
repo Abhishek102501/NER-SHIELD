@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LiveNumber } from "@/components/ui/LiveNumber";
 import { predictRisk } from "@/services/risk";
 import { getLocation } from "@/data/locations";
+import { responsePriorityForRisk } from "@/data/simulation";
 import type { WhatIfResult } from "@/types";
 import { SEVERITY, cn } from "@/lib/utils";
 
@@ -33,6 +34,8 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
   const sev = SEVERITY[band];
   const delta = projected - base;
   const impact = result?.impact ?? { villages: 0, roads: 0, bridges: 0 };
+  const priority = responsePriorityForRisk(projected);
+  const prioritySev = SEVERITY[priority.severity];
 
   const reset = () => {
     setRain(0);
@@ -40,17 +43,17 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
   };
 
   return (
-    <div className="card-marketing p-6 bg-canvas">
+    <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 sm:p-6">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <span className="caption-mono text-mute mb-1 block">WHAT-IF SCENARIO</span>
-          <h3 className="body-md font-semibold text-ink">
+          <p className="eyebrow mb-1 text-accent/70">What-If Scenario</p>
+          <h3 className="text-sm font-semibold text-fg">
             Stress-test the forecast
           </h3>
         </div>
         <button
           onClick={reset}
-          className="button-secondary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-[11px] font-medium text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
         >
           <RotateCcw size={12} /> Reset
         </button>
@@ -76,17 +79,17 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
         </div>
 
         {/* Outcome */}
-        <div className="rounded-lg border border-hairline bg-canvas-soft-2 p-5">
+        <div className="rounded-xl border border-white/8 bg-black/25 p-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="caption-mono text-mute block mb-1">CURRENT</span>
-              <span className="numeric text-2xl font-semibold text-body">
+              <p className="eyebrow">Current</p>
+              <span className="numeric text-2xl font-semibold text-fg-muted">
                 {base}%
               </span>
             </div>
-            <ArrowRight size={18} className="text-mute" />
+            <ArrowRight size={18} className="text-fg-dim" />
             <div className="text-right">
-              <span className="caption-mono text-mute block mb-1">PROJECTED</span>
+              <p className="eyebrow">Projected</p>
               <LiveNumber
                 value={projected}
                 suffix="%"
@@ -95,20 +98,32 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
             </div>
           </div>
 
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-canvas border border-hairline">
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/8">
             <motion.div
               className={cn("h-full rounded-full", sev.dot)}
               animate={{ width: `${projected}%` }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>
-          <p className="mt-2 body-sm text-body">
-            {delta > 0 ? (
-              <span className={sev.text}>▲ +{delta}% vs current forecast</span>
-            ) : (
-              <span className="text-mute">At current forecast levels</span>
-            )}
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-[11px] text-fg-muted">
+              {delta > 0 ? (
+                <span className={sev.text}>▲ +{delta}% vs current forecast</span>
+              ) : (
+                <span className="text-fg-dim">At current forecast levels</span>
+              )}
+            </p>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                prioritySev.bgSoft,
+                prioritySev.text,
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", prioritySev.dot)} />
+              {priority.label}
+            </span>
+          </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <Impact icon={Home} value={impact.villages} label="Villages" />
@@ -136,9 +151,9 @@ function Slider({
 }) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between body-sm">
-        <span className="text-body font-medium">{label}</span>
-        <span className="numeric rounded-full bg-canvas-soft-2 border border-hairline px-2.5 py-0.5 caption-mono text-ink">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[12px] text-fg-muted">{label}</span>
+        <span className="numeric rounded-md bg-accent/10 px-2 py-0.5 text-[12px] font-semibold text-accent">
           +{value}%
         </span>
       </div>
@@ -148,7 +163,7 @@ function Slider({
         max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="ns-range w-full cursor-pointer accent-primary"
+        className="ns-range w-full"
       />
     </div>
   );
@@ -164,16 +179,15 @@ function Impact({
   label: string;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-md border border-hairline bg-canvas p-3">
-      <Icon size={14} className="text-warning mb-1" />
+    <div className="flex flex-col items-center rounded-lg bg-white/[0.03] py-2.5">
+      <Icon size={14} className="text-sev-high" />
       <LiveNumber
         value={value}
-        className="numeric text-lg font-semibold text-ink"
+        className="numeric mt-1 text-lg font-semibold text-fg"
       />
-      <span className="caption-mono text-[9px] text-mute">
+      <span className="text-[9px] uppercase tracking-[0.1em] text-fg-dim">
         {label}
       </span>
     </div>
   );
 }
-
