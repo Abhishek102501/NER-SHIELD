@@ -1,4 +1,9 @@
-import type { Severity } from "@/types";
+import type { InfraPoint, Severity } from "@/types";
+import {
+  INFRASTRUCTURE_POINTS,
+  SCHOOLS as SCHOOLS_DATA,
+  VILLAGES as VILLAGES_DATA,
+} from "@/data/infrastructure";
 
 /**
  * DEMONSTRATION GeoJSON for the GIS command center (self-contained — no external
@@ -185,33 +190,18 @@ export const RIVERS: FC = {
   ],
 };
 
-export const VILLAGES: FC = {
+const pointsToFC = (points: InfraPoint[]): FC => ({
   type: "FeatureCollection",
-  features: [
-    ["Rangpo", 88.53, 27.18],
-    ["Singtam", 88.5, 27.23],
-    ["Melli", 88.46, 27.06],
-    ["Rhenock", 88.68, 27.19],
-    ["Pakyong", 88.6, 27.24],
-  ].map(([name, lng, lat]) => ({
+  features: points.map((p) => ({
     type: "Feature" as const,
-    properties: { name, kind: "village" },
-    geometry: { type: "Point" as const, coordinates: [lng as number, lat as number] },
+    properties: { id: p.id, name: p.name, kind: p.kind },
+    geometry: { type: "Point" as const, coordinates: p.center },
   })),
-};
+});
 
-export const INFRASTRUCTURE: FC = {
-  type: "FeatureCollection",
-  features: [
-    ["District Hospital", 88.52, 27.16, "hospital"],
-    ["Teesta Bridge", 88.54, 27.1, "bridge"],
-    ["Relief Depot", 88.49, 27.2, "depot"],
-  ].map(([name, lng, lat, kind]) => ({
-    type: "Feature" as const,
-    properties: { name, kind },
-    geometry: { type: "Point" as const, coordinates: [lng as number, lat as number] },
-  })),
-};
+export const VILLAGES: FC = pointsToFC(VILLAGES_DATA);
+export const SCHOOLS: FC = pointsToFC(SCHOOLS_DATA);
+export const INFRASTRUCTURE: FC = pointsToFC(INFRASTRUCTURE_POINTS);
 
 export const INCIDENT_POINTS: FC = {
   type: "FeatureCollection",

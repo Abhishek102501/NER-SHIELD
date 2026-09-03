@@ -1,51 +1,76 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, Siren, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, Check, Siren, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ESCALATION_ALERTS } from "@/data/alerts";
 import { acknowledgeAlert } from "@/services/ops";
 import { SEVERITY, cn } from "@/lib/utils";
 
+const TRIGGER_EVENT = "ns:trigger-alert";
+
+/** Fire a demonstration escalation alert from anywhere in the app. */
+export function triggerDemoAlert() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(TRIGGER_EVENT));
+  }
+}
+
 /**
- * Real-time escalation alerts. Surfaces queued escalations one at a time with
- * an acknowledge interaction; advances to the next after a short delay.
+ * Real-time escalation alerts. Auto-surfaces queued escalations and can be
+ * triggered on demand; supports an acknowledge interaction.
  */
 export function AlertSystem() {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [acked, setAcked] = useState(false);
   const timers = useRef<number[]>([]);
 
   const alert = ESCALATION_ALERTS[index];
 
   const dismiss = (ack: boolean) => {
-    if (ack) void acknowledgeAlert(alert.id);
-    setVisible(false);
-    if (index < ESCALATION_ALERTS.length - 1) {
+    if (ack) {
+      void acknowledgeAlert(alert.id);
+      setAcked(true);
       const t = window.setTimeout(() => {
-        setIndex((i) => i + 1);
-        setVisible(true);
-      }, 6000);
+        setVisible(false);
+        setAcked(false);
+      }, 1300);
       timers.current.push(t);
+      return;
     }
+    setVisible(false);
   };
 
-  // Surface the first alert shortly after load; auto-retire it if not actioned.
+  // Auto-surface the first alert; auto-retire it if not actioned.
   useEffect(() => {
     const show = window.setTimeout(() => setVisible(true), 5200);
     timers.current.push(show);
     const captured = timers.current;
-    return () => {
-      captured.forEach(clearTimeout);
-    };
+    return () => captured.forEach(clearTimeout);
   }, []);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || acked) return;
     const auto = window.setTimeout(() => dismiss(false), 9000);
     return () => clearTimeout(auto);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, index]);
+  }, [visible, index, acked]);
+
+  // On-demand trigger: advance to the next alert and show it.
+  useEffect(() => {
+    const onTrigger = () => {
+      setAcked(false);
+      setVisible(false);
+      const t = window.setTimeout(() => {
+        setIndex((i) => (i + 1) % ESCALATION_ALERTS.length);
+        setVisible(true);
+      }, 180);
+      timers.current.push(t);
+    };
+    window.addEventListener(TRIGGER_EVENT, onTrigger);
+    return () => window.removeEventListener(TRIGGER_EVENT, onTrigger);
+  }, []);
 
   if (!alert) return null;
   const from = SEVERITY[alert.from];
@@ -61,17 +86,40 @@ export function AlertSystem() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 40, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
-            className="glass-float pointer-events-auto overflow-hidden rounded-xl border border-sev-critical/30"
+            className={cn(
+              "glass-float pointer-events-auto overflow-hidden rounded-xl border",
+              acked ? "border-sev-low/40" : "border-sev-critical/30",
+            )}
           >
-            <span className="absolute inset-x-0 top-0 h-0.5 bg-sev-critical crit-pulse" />
+            <span
+              className={cn(
+                "absolute inset-x-0 top-0 h-0.5",
+                acked ? "bg-sev-low" : "bg-sev-critical crit-pulse",
+              )}
+            />
             <div className="flex items-start gap-3 p-4">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-sev-critical/12 text-sev-critical">
-                <Siren size={17} />
+              <span
+                className={cn(
+                  "grid h-9 w-9 shrink-0 place-items-center rounded-lg",
+                  acked
+                    ? "bg-sev-low/12 text-sev-low"
+                    : "bg-sev-critical/12 text-sev-critical",
+                )}
+              >
+                {acked ? <BadgeCheck size={17} /> : <Siren size={17} />}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-sev-critical">
-                    Risk Escalated
+                  <p
+                    className={cn(
+                      "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em]",
+                      acked ? "text-sev-low" : "text-sev-critical",
+                    )}
+                  >
+                    {acked ? "Acknowledged" : "Risk Escalated"}
+                    <span className="rounded bg-white/10 px-1 py-0.5 text-[8px] tracking-widest text-fg-dim">
+                      DEMO
+                    </span>
                   </p>
                   <button
                     onClick={() => dismiss(false)}
@@ -86,13 +134,9 @@ export function AlertSystem() {
                 </p>
 
                 <div className="mt-2 flex items-center gap-2 text-[11px]">
-                  <span className={cn("font-semibold", from.text)}>
-                    {from.label}
-                  </span>
+                  <span className={cn("font-semibold", from.text)}>{from.label}</span>
                   <ArrowRight size={12} className="text-fg-dim" />
-                  <span className={cn("font-semibold", to.text)}>
-                    {to.label}
-                  </span>
+                  <span className={cn("font-semibold", to.text)}>{to.label}</span>
                 </div>
 
                 <p className="mt-2 text-[11px] leading-snug text-fg-muted">
@@ -104,12 +148,28 @@ export function AlertSystem() {
                   {alert.action}
                 </p>
 
-                <button
-                  onClick={() => dismiss(true)}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-1.5 text-[11px] font-semibold text-fg transition-colors hover:bg-white/[0.12]"
-                >
-                  <Check size={12} /> Acknowledge
-                </button>
+                <AnimatePresence mode="wait">
+                  {acked ? (
+                    <motion.p
+                      key="ok"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-sev-low"
+                    >
+                      <Check size={13} /> Acknowledged ✓
+                    </motion.p>
+                  ) : (
+                    <motion.button
+                      key="ack"
+                      onClick={() => dismiss(true)}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-1.5 text-[11px] font-semibold text-fg transition-colors hover:bg-white/[0.12]"
+                    >
+                      <Check size={12} /> Acknowledge Alert
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>

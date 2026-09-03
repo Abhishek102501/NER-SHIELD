@@ -20,6 +20,7 @@ This is the **foundation phase**. What exists today:
 | --- | --- |
 | Spring Boot application, starts and serves HTTP | Implemented |
 | `GET /api/health` + Actuator health | Implemented |
+| `GET /api/threats` — Global Threat Intelligence feed | Implemented (demo detection source) |
 | Global exception handling and error contract | Implemented |
 | CORS for the Next.js frontend | Implemented |
 | Stateless Spring Security chain (public health, everything else 401) | Implemented |
@@ -59,6 +60,8 @@ backend/
     │   │   ├── health/           GET /api/health
     │   │   ├── security/         Security chain, JWT contract and properties
     │   │   ├── ai/               AIService, AIClient, AIProperties, dto/
+    │   │   ├── threat/           Global Threat Intelligence: detection/, RiskClassifier,
+    │   │   │                     ThreatTransformer, ThreatService, ThreatController, dto/
     │   │   ├── user/             (reserved)
     │   │   ├── incident/         (reserved)
     │   │   ├── report/           (reserved)
@@ -162,6 +165,42 @@ before the context finishes initialising.
 ```
 
 Reports only that the HTTP layer is serving. Dependency health belongs to Actuator.
+
+### `GET /api/threats` — public
+
+The Global Threat Intelligence feed the frontend's ThreatMap consumes:
+
+```json
+{
+  "meta": { "source": "demo", "generatedAt": "2026-09-03T07:48:48.800Z", "count": 8 },
+  "events": [
+    {
+      "id": "det-001",
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "locationAvailable": true,
+      "location": "New Delhi, Delhi",
+      "entity": "Credential",
+      "threatName": "Credential Policy Violation",
+      "risk": "high",
+      "timestamp": "2026-09-03T07:03:40.865Z",
+      "description": "A Credential detection triggered Policy Violation with 93% model confidence."
+    }
+  ]
+}
+```
+
+`meta.source` is `"demo"` until a real detection source (see `com.nershield.threat.detection.DetectionSource`)
+is wired in to replace `DemoDetectionSource` — the frontend uses this field to avoid ever
+labelling demonstration data as live. An event's `latitude`/`longitude` are present only
+when `locationAvailable` is `true`; the transformer never fabricates a location for a
+detection that didn't carry one. See `com.nershield.threat.package-info` for the full
+pipeline (`DetectionSource` → `RiskClassifier` + `ThreatTransformer` → `ThreatController`)
+and `RiskClassifier`'s Javadoc for the deterministic risk-scoring model.
+
+Public for the same reason `/api/health` is: no authentication mechanism is wired in yet
+for any route in this backend. Move it behind auth alongside every other domain once
+`JwtTokenProvider` is implemented.
 
 ### `GET /actuator/health` — public
 

@@ -3,4 +3,5 @@ export * from "./endpoints";
 export * from "./risk";
 export * from "./gis";
 export * from "./ops";
+export * from "./threats";
 export { USE_MOCK } from "./http";

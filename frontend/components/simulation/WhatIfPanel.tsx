@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LiveNumber } from "@/components/ui/LiveNumber";
 import { predictRisk } from "@/services/risk";
 import { getLocation } from "@/data/locations";
+import { responsePriorityForRisk } from "@/data/simulation";
 import type { WhatIfResult } from "@/types";
 import { SEVERITY, cn } from "@/lib/utils";
 
@@ -33,6 +34,8 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
   const sev = SEVERITY[band];
   const delta = projected - base;
   const impact = result?.impact ?? { villages: 0, roads: 0, bridges: 0 };
+  const priority = responsePriorityForRisk(projected);
+  const prioritySev = SEVERITY[priority.severity];
 
   const reset = () => {
     setRain(0);
@@ -102,13 +105,25 @@ export function WhatIfPanel({ locationId }: { locationId: string }) {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>
-          <p className="mt-2 text-[11px] text-fg-muted">
-            {delta > 0 ? (
-              <span className={sev.text}>▲ +{delta}% vs current forecast</span>
-            ) : (
-              <span className="text-fg-dim">At current forecast levels</span>
-            )}
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-[11px] text-fg-muted">
+              {delta > 0 ? (
+                <span className={sev.text}>▲ +{delta}% vs current forecast</span>
+              ) : (
+                <span className="text-fg-dim">At current forecast levels</span>
+              )}
+            </p>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                prioritySev.bgSoft,
+                prioritySev.text,
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", prioritySev.dot)} />
+              {priority.label}
+            </span>
+          </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <Impact icon={Home} value={impact.villages} label="Villages" />

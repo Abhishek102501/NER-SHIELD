@@ -185,6 +185,124 @@ body {
   }
 }
 
+/* ============================================================
+   THREAT MAP (Leaflet / OpenStreetMap)
+   ============================================================ */
+
+/* Recolor stock OSM raster tiles to match the dark command-center theme. */
+.ns-threatmap .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.92) saturate(0.6);
+}
+.ns-threatmap {
+  background: #060a14;
+}
+.ns-threatmap .leaflet-control-attribution {
+  background: rgba(9, 13, 24, 0.6);
+  color: var(--color-fg-dim);
+}
+
+/* Custom risk marker */
+.ns-threat-marker {
+  background: transparent;
+  border: none;
+}
+.ns-threat-marker-dot {
+  position: relative;
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--marker-color);
+  color: var(--marker-color);
+  border: 1.5px solid rgba(5, 7, 14, 0.9);
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--marker-color) 60%, transparent);
+  cursor: pointer;
+}
+
+/* Popup shell restyled as a glass panel */
+.ns-threat-popup .leaflet-popup-content-wrapper {
+  background: linear-gradient(180deg, rgba(20, 28, 46, 0.94) 0%, rgba(9, 13, 24, 0.96) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  box-shadow: var(--shadow-float);
+  color: var(--color-fg);
+  padding: 2px;
+}
+.ns-threat-popup .leaflet-popup-content {
+  margin: 10px 12px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+.ns-threat-popup .leaflet-popup-tip {
+  background: rgba(9, 13, 24, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+/* ============================================================
+   COMMAND MAP — intelligence markers (MapLibre DOM markers)
+   ============================================================ */
+
+/* Muted, dark base for the MapLibre canvas itself before tiles paint in. */
+.ns-command-map .maplibregl-canvas {
+  background: #05070e;
+}
+.ns-command-map .maplibregl-ctrl-attrib {
+  background: rgba(9, 13, 24, 0.55);
+}
+.ns-command-map .maplibregl-ctrl-attrib a {
+  color: #5f6c83;
+}
+
+.ns-intel-marker {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  color: var(--marker-color);
+}
+.ns-intel-marker-glow {
+  position: absolute;
+  inset: -11px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--marker-color) 0%, transparent 70%);
+  opacity: 0.35;
+  filter: blur(1px);
+  transition: opacity 0.2s ease;
+}
+.ns-intel-marker-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+}
+.ns-intel-marker-core {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--marker-color);
+  border: 2px solid #05070e;
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--marker-color) 70%, transparent);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ns-intel-marker-core svg {
+  width: 10px;
+  height: 10px;
+}
+.ns-intel-marker:hover .ns-intel-marker-core {
+  transform: scale(1.12);
+}
+.ns-intel-marker.is-active .ns-intel-marker-core {
+  transform: scale(1.28);
+  box-shadow: 0 0 16px 3px color-mix(in srgb, var(--marker-color) 85%, transparent);
+}
+.ns-intel-marker.is-active .ns-intel-marker-glow {
+  opacity: 0.6;
+}
+.ns-intel-marker.is-sensor .ns-intel-marker-core {
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--marker-color) 55%, transparent);
+}
+
 /* ---------- Range slider (simulation controls) ---------- */
 .ns-range {
   -webkit-appearance: none;

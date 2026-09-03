@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowUpRight, Layers, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowUpRight, Crosshair, Layers, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { ZoneDetailPanel } from "@/components/map/ZoneDetailPanel";
+import type { LiveMapApi } from "@/components/map/LiveMap";
 import { Section } from "@/components/ui/Section";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { REVEAL_VIEWPORT, fadeUp } from "@/lib/motion";
@@ -27,6 +28,7 @@ const TOGGLES: { id: string; label: string }[] = [
   { id: "roads", label: "Roads" },
   { id: "incidents", label: "Incidents" },
   { id: "villages", label: "Villages" },
+  { id: "schools", label: "Schools" },
   { id: "infrastructure", label: "Infra" },
 ];
 
@@ -34,6 +36,7 @@ const LEGEND: Severity[] = ["critical", "high", "moderate", "low"];
 
 export function GisCommandSection() {
   const [zone, setZone] = useState<RiskZone | null>(null);
+  const apiRef = useRef<LiveMapApi | null>(null);
   const [layers, setLayers] = useState<Record<string, boolean>>(
     Object.fromEntries(TOGGLES.map((t) => [t.id, true])),
   );
@@ -98,7 +101,20 @@ export function GisCommandSection() {
             onZoneSelect={setZone}
             selectedZoneId={zone?.id ?? null}
             layers={layers}
+            onReady={(api) => {
+              apiRef.current = api;
+            }}
           />
+
+          {/* Recenter control */}
+          <button
+            onClick={() => apiRef.current?.reset()}
+            aria-label="Recenter map"
+            title="Recenter on region"
+            className="glass-float absolute left-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-lg text-fg-muted transition-colors hover:text-accent"
+          >
+            <Crosshair size={16} />
+          </button>
 
           {/* Legend */}
           <div className="glass-float pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg px-3 py-2">
@@ -115,7 +131,12 @@ export function GisCommandSection() {
             </div>
           </div>
 
-          <ZoneDetailPanel zone={zone} onClose={() => setZone(null)} />
+          <ZoneDetailPanel
+            zone={zone}
+            onClose={() => setZone(null)}
+            onFocus={(d) => apiRef.current?.flyTo(d.center, 11)}
+            focusLabel="Zoom to zone"
+          />
         </div>
 
         {/* Footer CTA */}

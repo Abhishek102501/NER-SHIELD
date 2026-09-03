@@ -56,6 +56,12 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(EndpointRequest.to(HealthEndpoint.class))
                                         .permitAll()
+                                        // Read-only, minimized threat metadata for the map — see
+                                        // ThreatController. Public only because no auth mechanism
+                                        // is wired in yet for any route; move behind auth alongside
+                                        // the rest once JwtTokenProvider is implemented.
+                                        .requestMatchers(HttpMethod.GET, "/api/threats")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .exceptionHandling(

@@ -1,16 +1,64 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, MapPin, Send, Users } from "lucide-react";
+import {
+  Building2,
+  CheckCheck,
+  CircleCheck,
+  Loader,
+  MapPin,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { RESPONSE_INCIDENTS } from "@/data/response";
+import type { ResponseStatus } from "@/types";
 import { SEVERITY, cn } from "@/lib/utils";
+
+const STATUS_META: Record<
+  ResponseStatus,
+  { label: string; cls: string; dot: string }
+> = {
+  new: { label: "New", cls: "text-fg-dim", dot: "bg-fg-dim" },
+  assigned: { label: "Assigned", cls: "text-accent", dot: "bg-accent" },
+  acknowledged: {
+    label: "Acknowledged",
+    cls: "text-sev-moderate",
+    dot: "bg-sev-moderate",
+  },
+  "in-progress": {
+    label: "In Progress",
+    cls: "text-sev-high",
+    dot: "bg-sev-high",
+  },
+  resolved: { label: "Resolved", cls: "text-sev-low", dot: "bg-sev-low" },
+};
+
+const ACTIONS: {
+  status: ResponseStatus;
+  label: string;
+  icon: typeof UserPlus;
+}[] = [
+  { status: "assigned", label: "Assign", icon: UserPlus },
+  { status: "acknowledged", label: "Acknowledge", icon: CheckCheck },
+  { status: "in-progress", label: "Mark In Progress", icon: Loader },
+  { status: "resolved", label: "Resolve", icon: CircleCheck },
+];
 
 export function ResponsePriority() {
   const [id, setId] = useState(RESPONSE_INCIDENTS[0].id);
+  const [statuses, setStatuses] = useState<Record<string, ResponseStatus>>(() =>
+    Object.fromEntries(RESPONSE_INCIDENTS.map((i) => [i.id, "new"])),
+  );
+
   const featured =
     RESPONSE_INCIDENTS.find((i) => i.id === id) ?? RESPONSE_INCIDENTS[0];
   const sev = SEVERITY[featured.severity];
+  const status = statuses[featured.id] ?? "new";
+  const meta = STATUS_META[status];
+
+  const setStatus = (s: ResponseStatus) =>
+    setStatuses((prev) => ({ ...prev, [featured.id]: s }));
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
@@ -29,7 +77,7 @@ export function ResponsePriority() {
             )}
           >
             <span className={cn("absolute inset-x-0 top-0 h-0.5", sev.dot)} />
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
@@ -41,9 +89,27 @@ export function ResponsePriority() {
                 <span className={cn("h-1.5 w-1.5 rounded-full", sev.dot)} />
                 {sev.label} Incident
               </span>
-              <span className="numeric text-[11px] text-fg-dim">
-                Priority #{featured.priority}
-              </span>
+              <div className="flex items-center gap-2">
+                {/* Live status pill */}
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={status}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2 py-0.5 text-[10px] font-semibold",
+                      meta.cls,
+                    )}
+                  >
+                    <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
+                    {meta.label}
+                  </motion.span>
+                </AnimatePresence>
+                <span className="numeric text-[11px] text-fg-dim">
+                  #{featured.priority}
+                </span>
+              </div>
             </div>
 
             <h3 className="mt-4 text-xl font-semibold text-fg">
@@ -76,9 +142,30 @@ export function ResponsePriority() {
               </p>
             </div>
 
-            <button className="mt-4 inline-flex items-center gap-2 rounded-lg bg-sev-critical px-4 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5">
-              <Send size={14} /> Dispatch response
-            </button>
+            {/* Response actions */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {ACTIONS.map((a) => {
+                const active = status === a.status;
+                return (
+                  <button
+                    key={a.status}
+                    onClick={() => setStatus(a.status)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] font-semibold transition-colors",
+                      active
+                        ? "border-transparent bg-accent text-black"
+                        : "border-white/12 text-fg-muted hover:border-white/25 hover:text-fg",
+                    )}
+                  >
+                    <a.icon size={13} />
+                    {a.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10px] text-fg-dim">
+              SIMULATED dispatch · no responder is actually notified
+            </p>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -91,6 +178,7 @@ export function ResponsePriority() {
             {RESPONSE_INCIDENTS.map((inc) => {
               const s = SEVERITY[inc.severity];
               const active = inc.id === id;
+              const st = STATUS_META[statuses[inc.id] ?? "new"];
               return (
                 <li key={inc.id}>
                   <button
@@ -115,8 +203,9 @@ export function ResponsePriority() {
                       <p className="truncate text-[12px] font-medium text-fg">
                         {inc.location}
                       </p>
-                      <p className="truncate text-[11px] text-fg-muted">
-                        {inc.title}
+                      <p className="flex items-center gap-1.5 text-[11px] text-fg-muted">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", st.dot)} />
+                        <span className={st.cls}>{st.label}</span>
                       </p>
                     </div>
                     <span className={cn("numeric text-[13px] font-semibold", s.text)}>

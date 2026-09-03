@@ -16,9 +16,18 @@ const CIRC = 2 * Math.PI * R;
 
 export function RiskExplorer() {
   const [id, setId] = useState(DEFAULT_LOCATION_ID);
+  const [factorId, setFactorId] = useState<string | null>(null);
   const loc = getLocation(id);
   const sev = SEVERITY[loc.risk.band];
   const dash = CIRC * (1 - loc.risk.value / 100);
+
+  const activeFactor =
+    loc.factors.find((f) => f.id === factorId) ?? loc.factors[0];
+  // Best-effort: pair the chosen factor with a matching driver explanation.
+  const factorDriver =
+    loc.drivers.find((d) =>
+      d.label.toLowerCase().includes(activeFactor.label.toLowerCase().split(" ")[0]),
+    ) ?? loc.drivers[0];
 
   return (
     <Section id="prediction" className="border-t border-white/5">
@@ -130,29 +139,77 @@ export function RiskExplorer() {
           </div>
         </div>
 
-        {/* Factors */}
+        {/* Factors (interactive) */}
         <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 lg:col-span-4">
-          <p className="eyebrow mb-4">Contributing Factors</p>
-          <ul className="space-y-3">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="eyebrow">Contributing Factors</p>
+            <span className="text-[9px] text-fg-dim">tap to inspect</span>
+          </div>
+          <ul className="space-y-2">
             {loc.factors.map((f) => {
               const s = SEVERITY[f.severity];
+              const on = f.id === activeFactor.id;
               return (
                 <li key={f.id}>
-                  <div className="mb-1 flex items-center justify-between text-[11px]">
-                    <span className="text-fg-muted">{f.label}</span>
-                    <span className="numeric font-semibold text-fg">{f.weight}%</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
-                    <motion.div
-                      className={cn("h-full rounded-full", s.dot)}
-                      animate={{ width: `${f.weight}%` }}
-                      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFactorId(f.id)}
+                    className={cn(
+                      "w-full rounded-lg px-2 py-1.5 text-left transition-colors",
+                      on ? "bg-white/[0.05]" : "hover:bg-white/[0.02]",
+                    )}
+                  >
+                    <div className="mb-1 flex items-center justify-between text-[11px]">
+                      <span className={on ? "font-medium text-fg" : "text-fg-muted"}>
+                        {f.label}
+                      </span>
+                      <span className="numeric font-semibold text-fg">
+                        {f.weight}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
+                      <motion.div
+                        className={cn("h-full rounded-full", s.dot)}
+                        animate={{ width: `${f.weight}%` }}
+                        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ boxShadow: on ? `0 0 8px ${s.hex}aa` : "none" }}
+                      />
+                    </div>
+                  </button>
                 </li>
               );
             })}
           </ul>
+
+          {/* Selected-factor callout */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeFactor.id}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className={cn(
+                "mt-3 rounded-lg border p-2.5",
+                SEVERITY[activeFactor.severity].border,
+                SEVERITY[activeFactor.severity].bgSoft,
+              )}
+            >
+              <p className="text-[11px] leading-snug text-fg">
+                <span className="font-semibold">↑ {activeFactor.label}</span>{" "}
+                <span className="text-fg-muted">
+                  raises the simulated risk — it contributes{" "}
+                  <span className="numeric font-semibold text-fg">
+                    {activeFactor.weight}%
+                  </span>{" "}
+                  of the current score.
+                </span>
+              </p>
+              <p className="mt-1 text-[10px] leading-snug text-fg-muted">
+                {factorDriver.detail}
+              </p>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Explainable AI */}

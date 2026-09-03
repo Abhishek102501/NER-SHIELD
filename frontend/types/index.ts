@@ -67,10 +67,41 @@ export interface TimelinePoint {
   label: string;
   /** Risk index 0–100. */
   risk: number;
+  /** Hours relative to "now" — negative is observed history, positive is forecast. */
+  hourOffset: number;
   /** true for the current moment. */
   now?: boolean;
   /** true for forecast (future) points. */
   forecast?: boolean;
+}
+
+/**
+ * A discrete detected event — the shared intelligence event shape consumed by both
+ * the Risk Timeline chart and the Command Center map. `latitude`/`longitude` are only
+ * ever set when the event genuinely has a location; nothing downstream may invent one.
+ */
+export interface TimelineEvent {
+  id: string;
+  /** Anchors the event to a point on the timeline (matches a TimelinePoint.hourOffset). */
+  hourOffset: number;
+  title: string;
+  category: string;
+  severity: Severity;
+  /** Static demo clock time, e.g. "10:28 AM" — not derived from the real current time. */
+  time: string;
+  entity?: string;
+  location?: string;
+  status?: string;
+  description?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface TimeRangeOption {
+  id: string;
+  label: string;
+  /** Observed lookback window, in hours. */
+  hours: number;
 }
 
 export type LayerGroupId = "base" | "intelligence" | "infrastructure";
@@ -201,4 +232,47 @@ export interface EscalationAlert {
   cause: string;
   action: string;
   timeAgo: string;
+}
+
+/** Full GIS zone assessment shown in the ZoneDetailPanel. */
+export interface RiskZoneDetail {
+  id: string;
+  name: string;
+  band: Severity;
+  risk: number;
+  probability: number;
+  rainfall: number;
+  population: number;
+  infrastructureAtRisk: string;
+  drivers: string[];
+  recommendedAction: string;
+  center: [number, number];
+}
+
+export type ResponseStatus =
+  | "new"
+  | "assigned"
+  | "acknowledged"
+  | "in-progress"
+  | "resolved";
+
+export type InfraKind =
+  | "village"
+  | "hospital"
+  | "school"
+  | "bridge"
+  | "depot";
+
+export interface InfraPoint {
+  id: string;
+  name: string;
+  kind: InfraKind;
+  center: [number, number];
+}
+
+/** A single computer-vision demo finding. */
+export interface CvFinding {
+  label: string;
+  confidence: number;
+  severity: Severity;
 }
