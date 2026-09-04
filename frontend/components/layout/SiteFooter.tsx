@@ -1,20 +1,20 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Shield } from "lucide-react";
 import { Reveal } from "@/components/ui/Reveal";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-hairline bg-canvas-soft px-6 py-16 text-body">
+    <footer id="about" className="border-t border-hairline bg-white/5 px-6 py-16 text-fg-muted">
       <div className="mx-auto max-w-6xl">
         <Reveal>
-          <div className="card-marketing p-8 sm:p-12 relative overflow-hidden bg-canvas">
+          <div className="card-marketing p-8 sm:p-12 relative overflow-hidden">
             <div className="relative z-10">
-              <span className="caption-mono text-mute mb-3 block">
+              <span className="caption-mono text-fg-dim mb-3 block">
                 MISSION STATEMENT · SIH 2026
               </span>
-              <p className="max-w-2xl text-balance display-md text-ink">
+              <p className="max-w-2xl text-balance display-md text-fg">
                 Detecting hazard, simulating terrain impact, and prioritising response —{" "}
-                <span className="text-body font-normal">to safeguard North-East India.</span>
+                <span className="text-fg-muted font-normal">to safeguard North-East India.</span>
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
@@ -38,60 +38,60 @@ export function SiteFooter() {
         {/* 4-Column Vercel Footer Section */}
         <div className="mt-14 grid grid-cols-2 gap-8 border-t border-hairline pt-10 sm:grid-cols-4">
           <div>
-            <span className="caption-mono text-ink block mb-3 font-medium">
+            <span className="caption-mono text-fg block mb-3 font-medium">
               SYSTEM MODULES
             </span>
-            <ul className="space-y-2 body-sm text-body">
-              <li><a href="#terrain" className="hover:text-ink transition-colors">3D Digital Twin</a></li>
-              <li><a href="#prediction" className="hover:text-ink transition-colors">Risk Matrix Explorer</a></li>
-              <li><a href="#command" className="hover:text-ink transition-colors">GIS Command Center</a></li>
-              <li><a href="#response" className="hover:text-ink transition-colors">Disaster Response Loop</a></li>
+            <ul className="space-y-2 body-sm text-fg-muted">
+              <li><a href="#terrain" className="hover:text-fg transition-colors">3D Digital Twin</a></li>
+              <li><a href="#prediction" className="hover:text-fg transition-colors">Risk Matrix Explorer</a></li>
+              <li><a href="#command" className="hover:text-fg transition-colors">GIS Command Center</a></li>
+              <li><a href="#response" className="hover:text-fg transition-colors">Disaster Response Loop</a></li>
             </ul>
           </div>
 
           <div>
-            <span className="caption-mono text-ink block mb-3 font-medium">
+            <span className="caption-mono text-fg block mb-3 font-medium">
               SECTORS MONITORED
             </span>
-            <ul className="space-y-2 body-sm text-body">
-              <li><span className="text-body">Assam Valley (Guwahati - Silchar)</span></li>
-              <li><span className="text-body">Meghalaya Escarpment (Cherrapunji)</span></li>
-              <li><span className="text-body">Sikkim Teesta Corridor (Gangtok)</span></li>
-              <li><span className="text-body">NH-27 Landslide Prone Arteries</span></li>
+            <ul className="space-y-2 body-sm text-fg-muted">
+              <li><span className="text-fg-muted">Assam Valley (Guwahati - Silchar)</span></li>
+              <li><span className="text-fg-muted">Meghalaya Escarpment (Cherrapunji)</span></li>
+              <li><span className="text-fg-muted">Sikkim Teesta Corridor (Gangtok)</span></li>
+              <li><span className="text-fg-muted">NH-27 Landslide Prone Arteries</span></li>
             </ul>
           </div>
 
           <div>
-            <span className="caption-mono text-ink block mb-3 font-medium">
+            <span className="caption-mono text-fg block mb-3 font-medium">
               TECH STACK
             </span>
-            <ul className="space-y-2 body-sm text-body">
-              <li><span className="text-body">Geospatial AI & Satellite Radar</span></li>
-              <li><span className="text-body">Next.js & React 19 Engine</span></li>
-              <li><span className="text-body">Three.js Digital Twin Canvas</span></li>
-              <li><span className="text-body">Vercel Design Language</span></li>
+            <ul className="space-y-2 body-sm text-fg-muted">
+              <li><span className="text-fg-muted">Geospatial AI & Satellite Radar</span></li>
+              <li><span className="text-fg-muted">Next.js & React 19 Engine</span></li>
+              <li><span className="text-fg-muted">Three.js Digital Twin Canvas</span></li>
+              <li><span className="text-fg-muted">Vercel Design Language</span></li>
             </ul>
           </div>
 
           <div>
-            <span className="caption-mono text-ink block mb-3 font-medium">
+            <span className="caption-mono text-fg block mb-3 font-medium">
               NER-SHIELD
             </span>
-            <p className="body-sm text-body leading-relaxed mb-3">
+            <p className="body-sm text-fg-muted leading-relaxed mb-3">
               AI-powered disaster intelligence platform for North-Eastern Region.
             </p>
-            <span className="caption-mono text-[10px] text-mute block">
+            <span className="caption-mono text-[10px] text-fg-dim block">
               SIH 2026 · HACKATHON DEMO
             </span>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-hairline pt-6 sm:flex-row text-mute body-sm">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-hairline pt-6 sm:flex-row text-fg-dim body-sm">
           <div className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded bg-ink text-on-primary font-bold text-xs">
-              ▲
+            <span className="grid h-6 w-6 place-items-center rounded-md border border-accent/30 bg-accent/10 text-accent">
+              <Shield size={12} strokeWidth={2.4} />
             </span>
-            <span className="body-sm text-ink font-semibold">
+            <span className="body-sm text-fg font-semibold">
               NER-SHIELD
             </span>
           </div>

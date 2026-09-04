@@ -47,7 +47,7 @@ export function GisCommandSection() {
     <Section id="command" className="bg-[#000000] text-white py-20 border-b border-hairline relative">
       {/* Polarity-flipped dark showcase band header from DESIGN.md */}
       <div className="max-w-3xl mb-12">
-        <span className="caption-mono text-cyan block mb-2 font-medium">GIS COMMAND CENTER.</span>
+        <span className="caption-mono text-accent block mb-2 font-medium">GIS COMMAND CENTER.</span>
         <h2 className="display-lg text-white">
           The whole region, as one operational picture.
         </h2>
@@ -67,8 +67,8 @@ export function GisCommandSection() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/15 px-5 py-3.5 bg-black/60">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan opacity-75" />
-              <span className="relative h-2 w-2 rounded-full bg-cyan" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+              <span className="relative h-2 w-2 rounded-full bg-accent" />
             </span>
             <span className="caption-mono text-[11px] text-white">
               LIVE GIS OPERATIONAL PICTURE · NORTH EAST REGION
@@ -84,7 +84,7 @@ export function GisCommandSection() {
                 className={cn(
                   "rounded px-2.5 py-1 text-[11px] caption-mono transition-colors cursor-pointer border",
                   layers[t.id]
-                    ? "border-cyan bg-cyan/20 text-cyan font-semibold"
+                    ? "border-accent bg-accent/20 text-accent font-semibold"
                     : "border-white/10 text-white/50 hover:text-white/80 hover:border-white/25",
                 )}
               >
