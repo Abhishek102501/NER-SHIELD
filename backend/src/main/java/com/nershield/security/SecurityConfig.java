@@ -62,6 +62,16 @@ public class SecurityConfig {
                                         // the rest once JwtTokenProvider is implemented.
                                         .requestMatchers(HttpMethod.GET, "/api/threats")
                                         .permitAll()
+                                        // Read-only, aggregated risk zone assessments — see
+                                        // RiskZoneController. Same public-for-now rationale as
+                                        // /api/threats above.
+                                        .requestMatchers(HttpMethod.GET, "/api/risk/zones", "/api/risk/zones/*")
+                                        .permitAll()
+                                        // Read-only, aggregated incident feed — see
+                                        // IncidentController. Same public-for-now rationale as
+                                        // /api/threats above.
+                                        .requestMatchers(HttpMethod.GET, "/api/incidents")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .exceptionHandling(

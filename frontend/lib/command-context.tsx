@@ -12,6 +12,7 @@ import {
 import { DEFAULT_LAYER_STATE } from "@/data/layers";
 import { INCIDENTS } from "@/data/incidents";
 import { RISK_TIMELINE } from "@/data/timeline";
+import { getIncidents } from "@/services/ops";
 import type { Incident } from "@/types";
 
 export type ModalKind = "simulation" | "report" | null;
@@ -58,6 +59,9 @@ interface CommandState {
   openModal: (m: Exclude<ModalKind, null>) => void;
   closeModal: () => void;
 
+  // Incidents (real backend, with an automatic demo fallback — see services/ops.ts)
+  incidents: Incident[];
+
   // Selection
   selectedIncidentId: string | null;
   selectIncident: (id: string | null) => void;
@@ -90,6 +94,10 @@ export function CommandProvider({ children }: { children: ReactNode }) {
   const [layerPanelOpen, setLayerPanelOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalKind>(null);
+  // Initialized from the local fixture so first paint is unchanged; getIncidents() (real
+  // backend, with an automatic demo fallback — see services/ops.ts) then swaps it in once
+  // resolved, the same pattern ThreatMap uses for /api/threats.
+  const [incidents, setIncidents] = useState<Incident[]>(INCIDENTS);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     null,
   );
@@ -106,6 +114,16 @@ export function CommandProvider({ children }: { children: ReactNode }) {
     rainfall: 142,
     tick: 0,
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    getIncidents().then((fetched) => {
+      if (!cancelled && fetched.length > 0) setIncidents(fetched);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Subtle "live" telemetry — nudges values within realistic bounds.
   useEffect(() => {
@@ -140,7 +158,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CommandState>(() => {
     const selectedIncident =
-      INCIDENTS.find((i) => i.id === selectedIncidentId) ?? null;
+      incidents.find((i) => i.id === selectedIncidentId) ?? null;
     return {
       live,
       leftCollapsed,
@@ -159,6 +177,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
       activeModal,
       openModal,
       closeModal,
+      incidents,
       selectedIncidentId,
       selectIncident,
       selectedIncident,
@@ -182,6 +201,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
     activeModal,
     openModal,
     closeModal,
+    incidents,
     selectedIncidentId,
     selectIncident,
     selectedTimelineId,

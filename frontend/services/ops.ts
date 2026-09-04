@@ -8,13 +8,67 @@ import type {
   FieldReportDraft,
   Incident,
   ResponseIncident,
+  Severity,
 } from "@/types";
-import { ENDPOINTS } from "./endpoints";
+import { ENDPOINTS, INCIDENTS_URL } from "./endpoints";
 import { request } from "./http";
 
-/** GET /api/v1/incidents */
-export function getIncidents(): Promise<Incident[]> {
-  return request(ENDPOINTS.incidents(), INCIDENTS);
+const VALID_SEVERITIES: readonly string[] = ["low", "moderate", "high", "critical"];
+
+function isSeverity(value: unknown): value is Severity {
+  return typeof value === "string" && VALID_SEVERITIES.includes(value);
+}
+
+/** Structural check that a value is shaped like an {@link Incident} (see `types/index.ts`). */
+function isIncident(value: unknown): value is Incident {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.id === "string" &&
+    isSeverity(v.severity) &&
+    typeof v.title === "string" &&
+    typeof v.location === "string" &&
+    typeof v.timeAgo === "string" &&
+    typeof v.x === "number" &&
+    typeof v.y === "number" &&
+    typeof v.summary === "string" &&
+    typeof v.category === "string" &&
+    typeof v.reportedBy === "string"
+  );
+}
+
+/**
+ * GET /api/incidents — real backend (`backend/.../incident/IncidentController`). Falls back
+ * to the local `INCIDENTS` fixture, unchanged, if the backend is unreachable, times out, or
+ * returns something that doesn't validate — mirroring `services/threats.ts`'s `getThreats()`.
+ */
+export async function getIncidents(): Promise<Incident[]> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    let res: Response;
+    try {
+      res = await fetch(INCIDENTS_URL, { signal: controller.signal, cache: "no-store" });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!res.ok) {
+      throw new Error(`GET ${INCIDENTS_URL} -> ${res.status}`);
+    }
+
+    const json = (await res.json()) as { incidents?: unknown };
+    if (!Array.isArray(json.incidents) || !json.incidents.every(isIncident)) {
+      throw new Error("Malformed /api/incidents response");
+    }
+    return json.incidents;
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[incidents] backend unavailable, using demonstration data:", err);
+    }
+    return INCIDENTS;
+  }
 }
 
 /** GET /api/v1/incidents (response-priority view) */

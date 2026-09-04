@@ -5,6 +5,9 @@ server:
     include-stacktrace: never
 
 spring:
+  config:
+    import: "optional:file:.env[.properties]"
+
   application:
     name: ner-shield-backend
 

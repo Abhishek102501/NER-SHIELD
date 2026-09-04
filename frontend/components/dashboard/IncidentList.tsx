@@ -2,17 +2,16 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { MapPin, Radio, User } from "lucide-react";
-import { INCIDENTS } from "@/data/incidents";
 import { useCommand } from "@/lib/command-context";
 import { SEVERITY, cn } from "@/lib/utils";
 import { AlertItem } from "./AlertItem";
 
 export function IncidentList() {
-  const { selectedIncidentId, selectIncident, selectedIncident } = useCommand();
+  const { incidents, selectedIncidentId, selectIncident, selectedIncident } = useCommand();
 
   return (
     <div className="flex flex-col gap-2">
-      {INCIDENTS.map((incident, i) => (
+      {incidents.map((incident, i) => (
         <AlertItem
           key={incident.id}
           incident={incident}

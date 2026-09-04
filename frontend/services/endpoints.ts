@@ -16,6 +16,16 @@ export const BACKEND_BASE_URL =
 
 export const THREATS_URL = `${BACKEND_BASE_URL}/api/threats`;
 
+/** GET /api/risk/zones — real backend, same origin/rationale as THREATS_URL above. */
+export const RISK_ZONES_URL = `${BACKEND_BASE_URL}/api/risk/zones`;
+
+/** GET /api/risk/zones/{id} — real backend. */
+export const riskZoneByIdUrl = (id: string) =>
+  `${BACKEND_BASE_URL}/api/risk/zones/${encodeURIComponent(id)}`;
+
+/** GET /api/incidents — real backend, same origin/rationale as THREATS_URL above. */
+export const INCIDENTS_URL = `${BACKEND_BASE_URL}/api/incidents`;
+
 export const ENDPOINTS = {
   riskZones: () => `${API_BASE}/risk/zones`,
   riskById: (id: string) => `${API_BASE}/risk/${id}`,

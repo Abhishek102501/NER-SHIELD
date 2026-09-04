@@ -2,22 +2,39 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Info, MapPin, ShieldAlert, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { WhatIfPanel } from "@/components/simulation/WhatIfPanel";
 import { LiveNumber } from "@/components/ui/LiveNumber";
 import { Section } from "@/components/ui/Section";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { DEFAULT_LOCATION_ID, LOCATIONS, getLocation } from "@/data/locations";
+import { DEFAULT_LOCATION_ID, LOCATIONS } from "@/data/locations";
 import { REVEAL_VIEWPORT, fadeUp } from "@/lib/motion";
 import { SEVERITY, cn } from "@/lib/utils";
+import { getRiskZones } from "@/services/risk";
+import type { LocationProfile } from "@/types";
 
 const R = 52;
 const CIRC = 2 * Math.PI * R;
 
 export function RiskExplorer() {
+  // Initialized from the local fixture so first paint is unchanged; getRiskZones() (real
+  // backend, with an automatic demo fallback — see services/risk.ts) then swaps it in once
+  // resolved, the same pattern ThreatMap uses for /api/threats.
+  const [zones, setZones] = useState<LocationProfile[]>(LOCATIONS);
   const [id, setId] = useState(DEFAULT_LOCATION_ID);
   const [factorId, setFactorId] = useState<string | null>(null);
-  const loc = getLocation(id);
+
+  useEffect(() => {
+    let cancelled = false;
+    getRiskZones().then((fetched) => {
+      if (!cancelled && fetched.length > 0) setZones(fetched);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const loc = zones.find((z) => z.id === id) ?? zones[0];
   const sev = SEVERITY[loc.risk.band];
   const dash = CIRC * (1 - loc.risk.value / 100);
 
@@ -50,7 +67,7 @@ export function RiskExplorer() {
         viewport={REVEAL_VIEWPORT}
         className="mt-8 flex flex-wrap gap-2"
       >
-        {LOCATIONS.map((l) => {
+        {zones.map((l) => {
           const active = l.id === id;
           const s = SEVERITY[l.risk.band];
           return (

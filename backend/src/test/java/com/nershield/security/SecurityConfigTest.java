@@ -24,11 +24,14 @@ class SecurityConfigTest {
 
     @Test
     void unknownApiRouteRequiresAuthentication() throws Exception {
-        mockMvc.perform(get("/api/incidents"))
+        // /api/alerts is not implemented yet — unlike /api/threats, /api/risk/zones and
+        // /api/incidents, it has no explicit permitAll() rule, so it must still fall through
+        // to anyRequest().authenticated().
+        mockMvc.perform(get("/api/alerts"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.error").value("Unauthorized"))
-                .andExpect(jsonPath("$.path").value("/api/incidents"))
+                .andExpect(jsonPath("$.path").value("/api/alerts"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 

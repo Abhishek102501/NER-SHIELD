@@ -1,8 +1,14 @@
 /**
  * Mock transport. Every service call funnels through here so that switching to
  * the real backend is a single-file change: flip USE_MOCK and implement fetch().
+ *
+ * Defaults to mock (matches the historical hardcoded `true`) so nothing changes for the
+ * domains still on this path. Set `NEXT_PUBLIC_USE_MOCK=false` to disable it once a given
+ * domain's backend is ready — threats, risk zones and incidents no longer go through this
+ * function at all (see services/threats.ts, services/risk.ts, services/ops.ts), so this only
+ * affects what's still mocked (field reports, alerts, simulations, GIS layers).
  */
-export const USE_MOCK = true;
+export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
 const wait = (ms: number) =>
   new Promise<void>((res) => setTimeout(res, ms));
