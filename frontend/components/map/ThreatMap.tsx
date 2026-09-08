@@ -3,8 +3,8 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPinOff } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import {
   summarizeThreats,
   type ThreatEvent,
@@ -13,6 +13,85 @@ import {
 } from "@/data/threats";
 import { getThreats, type ThreatDataSource } from "@/services/threats";
 import { cn } from "@/lib/utils";
+import type { LocationResult } from "@/services/geocoding";
+
+/** Zoom level to land on per search-result category — tighter for smaller places. */
+const SEARCH_ZOOM_BY_CATEGORY: Record<LocationResult["category"], number> = {
+  country: 5,
+  state: 7,
+  city: 10,
+  district: 10,
+  village: 13,
+  landmark: 13,
+  coordinate: 13,
+};
+
+const SEARCH_MARKER_ICON = L.divIcon({
+  className: "ns-threat-search-marker",
+  html: `
+    <div class="ns-intel-marker is-active" style="--marker-color:#22d3ee">
+      <span class="ns-intel-marker-glow"></span>
+      <span class="ns-intel-marker-pulse pulse-ring"></span>
+      <span class="ns-intel-marker-core">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="#05070e" stroke="none"/></svg>
+      </span>
+    </div>
+  `,
+  iconSize: [20, 20],
+  iconAnchor: [10, 20],
+});
+
+export interface ThreatMapApi {
+  /** Flies to a search result and drops a highlighted marker. */
+  showSearchResult: (result: LocationResult) => void;
+  /** Removes the search-result marker, if any. */
+  clearSearchResult: () => void;
+}
+
+/** Bridges the imperative Leaflet map instance out to the parent via `onReady`,
+ * and owns the transient search-result marker (react-leaflet has no built-in
+ * "temporary imperative marker" primitive). */
+function SearchController({ onReady }: { onReady?: (api: ThreatMapApi) => void }) {
+  const map = useMap();
+  const markerRef = useRef<L.Marker | null>(null);
+
+  useEffect(() => {
+    onReady?.({
+      showSearchResult: (result) => {
+        markerRef.current?.remove();
+        markerRef.current = L.marker([result.lat, result.lon], {
+          icon: SEARCH_MARKER_ICON,
+        }).addTo(map);
+
+        const targetZoom = SEARCH_ZOOM_BY_CATEGORY[result.category] ?? 10;
+        if (result.boundingBox) {
+          const [west, south, east, north] = result.boundingBox;
+          map.flyToBounds(
+            [
+              [south, west],
+              [north, east],
+            ],
+            { padding: [80, 80], duration: 1.2, maxZoom: targetZoom },
+          );
+        } else {
+          map.flyTo([result.lat, result.lon], targetZoom, { duration: 1.2 });
+        }
+      },
+      clearSearchResult: () => {
+        markerRef.current?.remove();
+        markerRef.current = null;
+      },
+    });
+
+    return () => {
+      markerRef.current?.remove();
+      markerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
+
+  return null;
+}
 
 // Leaflet's default marker images resolve relative to the bundler's asset
 // path and 404 under Next.js/Vite unless the icon URLs are rebuilt from the
@@ -71,6 +150,8 @@ interface ThreatMapProps {
   ) => void;
   /** Which risk tiers to render; defaults to all. */
   visibleRisks?: Record<ThreatRisk, boolean>;
+  /** Exposes an imperative API (search fly-to) once the Leaflet map mounts. */
+  onReady?: (api: ThreatMapApi) => void;
 }
 
 const ALL_VISIBLE: Record<ThreatRisk, boolean> = {
@@ -83,6 +164,7 @@ export default function ThreatMap({
   className,
   onThreatsChange,
   visibleRisks = ALL_VISIBLE,
+  onReady,
 }: ThreatMapProps) {
   const [threats, setThreats] = useState<ThreatEvent[]>([]);
   const [source, setSource] = useState<ThreatDataSource>("demo");
@@ -131,6 +213,8 @@ export default function ThreatMap({
           subdomains={["a", "b", "c"]}
           attribution="&copy; OpenStreetMap contributors"
         />
+
+        <SearchController onReady={onReady} />
 
         {visible.map((threat) => (
           <Marker

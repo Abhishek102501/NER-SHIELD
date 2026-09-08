@@ -3,12 +3,14 @@
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { Loader2, ShieldAlert } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Section } from "@/components/ui/Section";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { MapSearch } from "@/components/map/MapSearch";
 import { REVEAL_VIEWPORT, fadeUp } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { ThreatEvent, ThreatRisk, ThreatSummary } from "@/data/threats";
+import type { ThreatMapApi } from "@/components/map/ThreatMap";
 import type { ThreatDataSource } from "@/services/threats";
 
 const ThreatMap = dynamic(() => import("@/components/map/ThreatMap"), {
@@ -40,6 +42,7 @@ export function GlobalThreatIntelSection() {
   });
   // Demo until the map's fetch resolves — never claim "LIVE" before we know the source.
   const [source, setSource] = useState<ThreatDataSource>("demo");
+  const mapApiRef = useRef<ThreatMapApi | null>(null);
 
   const toggleRisk = (id: ThreatRisk) =>
     setVisibleRisks((p) => ({ ...p, [id]: !p[id] }));
@@ -89,6 +92,10 @@ export function GlobalThreatIntelSection() {
               {isLive ? "LIVE" : "DEMO DATA"} · Threat Surveillance
             </span>
           </div>
+          <MapSearch
+            onSelect={(result) => mapApiRef.current?.showSearchResult(result)}
+            onClear={() => mapApiRef.current?.clearSearchResult()}
+          />
           <div className="flex flex-wrap items-center gap-1.5">
             <ShieldAlert size={13} className="mr-0.5 text-fg-dim" />
             {RISK_TOGGLES.map((r) => (
@@ -109,12 +116,18 @@ export function GlobalThreatIntelSection() {
           </div>
         </div>
 
-        {/* Map */}
-        <div className="relative h-[400px] sm:h-[520px]">
+        {/* Map — `z-0` isn't cosmetic: it gives this wrapper its own stacking
+            context so Leaflet's internal panes (z-index up to 700 for popups)
+            stay contained here instead of leaking into the outer stacking
+            context and painting over the toolbar's search dropdown above. */}
+        <div className="relative z-0 h-[400px] sm:h-[520px]">
           <ThreatMap
             className="h-full w-full"
             onThreatsChange={handleThreatsChange}
             visibleRisks={visibleRisks}
+            onReady={(api) => {
+              mapApiRef.current = api;
+            }}
           />
 
           {/* Legend */}
