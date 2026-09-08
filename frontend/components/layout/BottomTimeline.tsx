@@ -102,7 +102,7 @@ export function BottomTimeline() {
       </div>
 
       {/* Summary strip */}
-      <div className="mt-1.5 grid shrink-0 grid-cols-4 gap-1.5">
+      <div className="mt-1.5 grid shrink-0 grid-cols-2 gap-1.5 sm:grid-cols-4">
         <SummaryStat
           icon={ShieldQuestion}
           label="Total Events"

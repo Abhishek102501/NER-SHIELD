@@ -5,6 +5,7 @@ import {
   Marker as MLMarker,
   NavigationControl,
   setWorkerUrl,
+  type GeoJSONSource,
   type LngLatLike,
   type MapGeoJSONFeature,
   type MapLayerMouseEvent,
@@ -39,13 +40,29 @@ import {
 } from "@/data/geo";
 
 import { SEVERITY, cn } from "@/lib/utils";
+import type { LocationResult } from "@/services/geocoding";
 import type { RiskZone, Severity, TimelineEvent } from "@/types";
+
+/** Zoom level to land on per search-result category — tighter for smaller places. */
+const ZOOM_BY_CATEGORY: Record<LocationResult["category"], number> = {
+  country: 5,
+  state: 7,
+  city: 10,
+  district: 10,
+  village: 13,
+  landmark: 13,
+  coordinate: 13,
+};
 
 export interface LiveMapApi {
   flyTo: (center: [number, number], zoom?: number) => void;
   reset: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  /** Flies to a search result, drops a highlighted marker, and fits its bounds if known. */
+  showSearchResult: (result: LocationResult) => void;
+  /** Removes the search-result marker, if any. */
+  clearSearchResult: () => void;
 }
 
 interface LiveMapProps {
@@ -102,9 +119,12 @@ const ICON_PATH: Record<string, string> = {
   check: '<polyline points="5 13 10 18 19 7"/>',
 };
 
-function coreIconSvg(kind: "alert" | "check" | "sensor"): string {
+function coreIconSvg(kind: "alert" | "check" | "sensor" | "pin"): string {
   if (kind === "sensor") {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="2.4"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="8" stroke-opacity="0.55"/></svg>';
+  }
+  if (kind === "pin") {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="#05070e" stroke="none"/></svg>';
   }
   return `<svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ICON_PATH[kind]}</svg>`;
 }
@@ -118,10 +138,11 @@ function buildMarkerEl(opts: {
   color: string;
   animated: boolean;
   isSensor: boolean;
-  iconKind: "alert" | "check" | "sensor";
+  iconKind: "alert" | "check" | "sensor" | "pin";
+  extraClass?: string;
 }): HTMLDivElement {
   const el = document.createElement("div");
-  el.className = cn("ns-intel-marker", opts.isSensor && "is-sensor");
+  el.className = cn("ns-intel-marker", opts.isSensor && "is-sensor", opts.extraClass);
   el.style.setProperty("--marker-color", opts.color);
   el.innerHTML = `
     <span class="ns-intel-marker-glow"></span>
@@ -129,6 +150,32 @@ function buildMarkerEl(opts: {
     <span class="ns-intel-marker-core">${coreIconSvg(opts.iconKind)}</span>
   `;
   return el;
+}
+
+interface IncidentEntry {
+  id: string;
+  name: string;
+  severity: Severity;
+  lngLat: [number, number];
+}
+
+/** Builds the clustered-incident source data, honoring the moderate/low layer toggles. */
+function clusterGeoJSON(
+  entries: IncidentEntry[],
+  layers: Record<string, boolean>,
+): GeoJSON.FeatureCollection {
+  const moderateOn = layers["moderate-incidents"] !== false && layers["incidents"] !== false;
+  const lowOn = layers["low-incidents"] !== false && layers["incidents"] !== false;
+  return {
+    type: "FeatureCollection",
+    features: entries
+      .filter((e) => (e.severity === "moderate" ? moderateOn : lowOn))
+      .map((e) => ({
+        type: "Feature",
+        properties: { id: e.id, name: e.name, severity: e.severity, color: SEVERITY[e.severity].hex },
+        geometry: { type: "Point", coordinates: e.lngLat },
+      })),
+  };
 }
 
 /** Regional overview bounds computed from every plotted point — never a fixed guess. */
@@ -166,7 +213,11 @@ export default function LiveMap({
   const markersRef = useRef<Map<string, MarkerRecord>>(new Map());
   const layersRef = useRef(layers);
   const applyMarkerVisibilityRef = useRef<() => void>(() => {});
+  const clusterEntriesRef = useRef<IncidentEntry[]>([]);
   const [popup, setPopup] = useState<PopupState | null>(null);
+  const [hoverTooltip, setHoverTooltip] = useState<
+    { x: number; y: number; name: string; band: Severity } | null
+  >(null);
 
   useEffect(() => {
     layersRef.current = layers;
@@ -175,6 +226,7 @@ export default function LiveMap({
   useEffect(() => {
     const container = containerRef.current;
     const markers = markersRef.current;
+    let searchMarker: MLMarker | null = null;
 
     if (!container || mapRef.current) {
       return;
@@ -189,6 +241,18 @@ export default function LiveMap({
       const [lng, lat] = (f.geometry as GeoJSON.Point).coordinates as [number, number];
       return { id: p.id, name: p.name, severity: p.band, lngLat: [lng, lat] as [number, number] };
     });
+
+    // Critical/high incidents always render as individually-visible DOM markers —
+    // never clustered away, per "avoid hiding critical threats unnecessarily".
+    // Moderate/low incidents feed a real MapLibre clustered GeoJSON source instead,
+    // which is what keeps a dense demo dataset from clutter at low zoom.
+    const criticalHighEntries = incidentEntries.filter(
+      (e) => e.severity === "critical" || e.severity === "high",
+    );
+    const clusterableEntries = incidentEntries.filter(
+      (e) => e.severity === "moderate" || e.severity === "low",
+    );
+    clusterEntriesRef.current = clusterableEntries;
 
     const sensorEntries = [...HOSPITALS, ...BRIDGES, ...DEPOTS].map((p) => ({
       id: p.id,
@@ -366,6 +430,8 @@ export default function LiveMap({
       map.addSource("risk-zones", {
         type: "geojson",
         data: RISK_ZONES,
+        // Required for feature-state (hover highlight) below.
+        generateId: true,
       });
 
       map.addSource("rainfall", {
@@ -475,7 +541,12 @@ export default function LiveMap({
         source: "risk-zones",
         paint: {
           "fill-color": ["coalesce", ["get", "color"], "#ef4444"],
-          "fill-opacity": 0.14,
+          "fill-opacity": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            0.28,
+            0.14,
+          ],
         },
       });
 
@@ -510,6 +581,8 @@ export default function LiveMap({
         id: "villages",
         type: "circle",
         source: "villages",
+        // Only past a middling zoom — at the regional overview these just add noise.
+        minzoom: 8,
         paint: {
           "circle-radius": 3.5,
           "circle-color": "#94a3b8",
@@ -522,9 +595,73 @@ export default function LiveMap({
         id: "schools",
         type: "circle",
         source: "schools",
+        minzoom: 8,
         paint: {
           "circle-radius": 3.5,
           "circle-color": "#a78bfa",
+          "circle-stroke-color": "#05070e",
+          "circle-stroke-width": 1.5,
+        },
+      });
+
+      // ----------------------------------------------------------
+      // MODERATE / LOW INCIDENTS — clustered (critical/high stay as
+      // always-visible DOM markers, added further below).
+      // ----------------------------------------------------------
+
+      map.addSource("incident-clusters", {
+        type: "geojson",
+        data: clusterGeoJSON(clusterableEntries, layersRef.current),
+        cluster: true,
+        clusterRadius: 50,
+        clusterMaxZoom: 13,
+      });
+
+      map.addLayer({
+        id: "incident-clusters-circle",
+        type: "circle",
+        source: "incident-clusters",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": "#f97316",
+          "circle-opacity": 0.85,
+          "circle-stroke-color": "#05070e",
+          "circle-stroke-width": 2,
+          "circle-radius": [
+            "step",
+            ["get", "point_count"],
+            14,
+            5,
+            18,
+            15,
+            23,
+          ],
+        },
+      });
+
+      map.addLayer({
+        id: "incident-clusters-count",
+        type: "symbol",
+        source: "incident-clusters",
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-size": 11,
+          "text-font": ["Noto Sans Bold"],
+        },
+        paint: {
+          "text-color": "#05070e",
+        },
+      });
+
+      map.addLayer({
+        id: "incident-clusters-unclustered",
+        type: "circle",
+        source: "incident-clusters",
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-radius": 6,
+          "circle-color": ["coalesce", ["get", "color"], "#eab308"],
           "circle-stroke-color": "#05070e",
           "circle-stroke-width": 1.5,
         },
@@ -550,7 +687,7 @@ export default function LiveMap({
       // INTELLIGENCE MARKERS — GIS incidents, sensors, security events
       // ----------------------------------------------------------
 
-      for (const inc of incidentEntries) {
+      for (const inc of criticalHighEntries) {
         addMarker(`incident:${inc.id}`, "incident", inc.lngLat, inc.name, inc.severity);
       }
       for (const s of sensorEntries) {
@@ -608,6 +745,111 @@ export default function LiveMap({
 
         zoomIn: () => map.zoomIn(),
         zoomOut: () => map.zoomOut(),
+
+        showSearchResult: (result) => {
+          searchMarker?.remove();
+          const el = buildMarkerEl({
+            color: "#22d3ee",
+            animated: true,
+            isSensor: false,
+            iconKind: "pin",
+            extraClass: "is-active",
+          });
+          searchMarker = new MLMarker({ element: el, anchor: "bottom" })
+            .setLngLat([result.lon, result.lat])
+            .addTo(map);
+
+          const targetZoom = ZOOM_BY_CATEGORY[result.category] ?? 11;
+          if (result.boundingBox) {
+            const [west, south, east, north] = result.boundingBox;
+            map.fitBounds(
+              [
+                [west, south],
+                [east, north],
+              ],
+              { padding: 80, pitch: 0, bearing: 0, duration: 1200, maxZoom: targetZoom },
+            );
+          } else {
+            map.flyTo({
+              center: [result.lon, result.lat],
+              zoom: targetZoom,
+              pitch: 45,
+              duration: 1200,
+              essential: true,
+            });
+          }
+        },
+
+        clearSearchResult: () => {
+          searchMarker?.remove();
+          searchMarker = null;
+        },
+      });
+
+      // ----------------------------------------------------------
+      // CLUSTER INTERACTION — expand on click, open incidents on leaf click
+      // ----------------------------------------------------------
+
+      map.on("click", "incident-clusters-circle", (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
+        const clusterId = feature?.properties?.cluster_id as number | undefined;
+        if (!feature || clusterId === undefined) return;
+        const source = map.getSource("incident-clusters") as GeoJSONSource;
+        source
+          .getClusterExpansionZoom(clusterId)
+          .then((zoom) => {
+            map.easeTo({
+              center: (feature.geometry as GeoJSON.Point).coordinates as [number, number],
+              zoom,
+              duration: 500,
+            });
+          })
+          .catch(() => {});
+      });
+
+      map.on("click", "incident-clusters-unclustered", (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
+        const props = feature?.properties as { id: string } | undefined;
+        if (!feature || !props) return;
+        const point = map.project(
+          (feature.geometry as GeoJSON.Point).coordinates as LngLatLike,
+        );
+        setPopup({ kind: "incident", id: `incident:${props.id}`, x: point.x, y: point.y });
+      });
+
+      for (const layerId of ["incident-clusters-circle", "incident-clusters-unclustered"]) {
+        map.on("mouseenter", layerId, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", layerId, () => {
+          map.getCanvas().style.cursor = "";
+        });
+      }
+
+      // ----------------------------------------------------------
+      // RISK ZONE HOVER — subtle highlight + tooltip
+      // ----------------------------------------------------------
+
+      let hoveredZoneFeatureId: number | null = null;
+
+      map.on("mousemove", "risk-zones-fill", (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
+        if (!feature || feature.id === undefined) return;
+        if (hoveredZoneFeatureId !== null && hoveredZoneFeatureId !== feature.id) {
+          map.setFeatureState({ source: "risk-zones", id: hoveredZoneFeatureId }, { hover: false });
+        }
+        hoveredZoneFeatureId = feature.id as number;
+        map.setFeatureState({ source: "risk-zones", id: hoveredZoneFeatureId }, { hover: true });
+        const props = feature.properties as { name: string; band: Severity };
+        setHoverTooltip({ x: event.point.x, y: event.point.y, name: props.name, band: props.band });
+      });
+
+      map.on("mouseleave", "risk-zones-fill", () => {
+        if (hoveredZoneFeatureId !== null) {
+          map.setFeatureState({ source: "risk-zones", id: hoveredZoneFeatureId }, { hover: false });
+        }
+        hoveredZoneFeatureId = null;
+        setHoverTooltip(null);
       });
 
       // ----------------------------------------------------------
@@ -679,6 +921,7 @@ export default function LiveMap({
         rec.marker.remove();
       }
       markers.clear();
+      searchMarker?.remove();
 
       map.remove();
 
@@ -741,6 +984,9 @@ export default function LiveMap({
     applyLayerVisibility(map, layers);
     applyMarkerVisibilityRef.current();
 
+    const clusterSource = map.getSource("incident-clusters") as GeoJSONSource | undefined;
+    clusterSource?.setData(clusterGeoJSON(clusterEntriesRef.current, layers));
+
     if (map.getLayer("hillshade") || map.getSource("terrainSource")) {
       const wantTerrain = layers["terrain-3d"] !== false;
       const hasTerrain = !!map.getTerrain();
@@ -801,6 +1047,18 @@ export default function LiveMap({
           />
         )}
       </AnimatePresence>
+
+      {hoverTooltip && !popup && (
+        <div
+          className="glass-float pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-[calc(100%+10px)] whitespace-nowrap rounded-md px-2.5 py-1.5 text-[11px]"
+          style={{ left: hoverTooltip.x, top: hoverTooltip.y }}
+        >
+          <span className={cn("font-semibold", SEVERITY[hoverTooltip.band].text)}>
+            {SEVERITY[hoverTooltip.band].label} Risk
+          </span>
+          <span className="text-fg-muted"> · {hoverTooltip.name}</span>
+        </div>
+      )}
     </div>
   );
 }

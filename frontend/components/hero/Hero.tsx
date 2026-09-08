@@ -3,7 +3,7 @@
 import { motion, useReducedMotion, useScroll } from "framer-motion";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { ArrowRight, Bell, Box, ChevronDown, MapPin, Satellite, ShieldAlert } from "lucide-react";
 import { EASE_OUT } from "@/lib/motion";
 import { HERO_HOTSPOTS } from "@/data/hero-feed";
@@ -24,14 +24,11 @@ const HeroCanvas = dynamic(() => import("./HeroCanvas"), { ssr: false });
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
-  const [mounted, setMounted] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
   });
-
-  useEffect(() => setMounted(true), []);
 
   return (
     <section
@@ -41,7 +38,7 @@ export function Hero() {
     >
       {/* 3D WebGL Digital Twin Terrain Canvas Background */}
       <div className="absolute inset-0 z-0">
-        {mounted && !reduce ? (
+        {!reduce ? (
           <HeroCanvas scroll={scrollYProgress} />
         ) : (
           <div className="pointer-events-none absolute inset-0 map-grid opacity-60" />

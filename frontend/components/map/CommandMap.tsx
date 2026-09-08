@@ -3,6 +3,9 @@
 import dynamic from "next/dynamic";
 import { Crosshair, Loader2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { LayerControl } from "@/components/map/LayerControl";
+import { MapSearch } from "@/components/map/MapSearch";
+import { PrimaryActions } from "@/components/map/PrimaryActions";
 import { ZoneDetailPanel } from "@/components/map/ZoneDetailPanel";
 import type { LiveMapApi } from "@/components/map/LiveMap";
 import { mappableTimelineEvents, TIMELINE_EVENTS } from "@/data/timeline";
@@ -72,6 +75,17 @@ export function CommandMap() {
       >
         <Crosshair size={16} />
       </button>
+
+      {/* Top-left control cluster — search, primary actions, layers. Wraps so it
+          never overflows a narrow viewport. */}
+      <div className="absolute left-3 right-16 top-3 z-20 flex flex-wrap items-start gap-2">
+        <MapSearch
+          onSelect={(result) => apiRef.current?.showSearchResult(result)}
+          onClear={() => apiRef.current?.clearSearchResult()}
+        />
+        <PrimaryActions />
+        <LayerControl />
+      </div>
 
       <ZoneDetailPanel
         zone={zone}

@@ -7,6 +7,11 @@ import type { MotionValue } from "framer-motion";
 
 const FOG_COLOR = "#05070e";
 
+function seededRandom(seed: number): number {
+  const value = Math.sin(seed * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 /* ---------- procedural terrain ---------- */
 function fbm(x: number, y: number): number {
   // Cheap ridged sum-of-sines terrain (no noise lib needed).
@@ -152,9 +157,9 @@ function Particles({ count = 380 }: { count?: number }) {
     const g = new THREE.BufferGeometry();
     const arr = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 120;
-      arr[i * 3 + 1] = Math.random() * 40 - 2;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 120;
+      arr[i * 3] = (seededRandom(i * 3) - 0.5) * 120;
+      arr[i * 3 + 1] = seededRandom(i * 3 + 1) * 40 - 2;
+      arr[i * 3 + 2] = (seededRandom(i * 3 + 2) - 0.5) * 120;
     }
     g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
     return g;

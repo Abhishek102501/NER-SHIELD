@@ -194,7 +194,7 @@ export function FieldOfficerCard() {
 
         {/* Severity */}
         <p className="eyebrow mb-1.5">Severity</p>
-        <div className="mb-3 grid grid-cols-4 gap-1.5">
+        <div className="mb-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
           {SEVERITIES.map((s) => {
             const sv = SEVERITY[s];
             const on = severity === s;

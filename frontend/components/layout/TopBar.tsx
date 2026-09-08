@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import {
   Bell,
   ChevronDown,
@@ -20,9 +21,12 @@ import { SEVERITY, cn } from "@/lib/utils";
 function LiveClock() {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
-    setNow(new Date());
+    const initialUpdate = setTimeout(() => setNow(new Date()), 0);
     const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
+    return () => {
+      clearTimeout(initialUpdate);
+      clearInterval(id);
+    };
   }, []);
   const time = now
     ? now.toLocaleTimeString("en-GB", { hour12: false })
@@ -128,7 +132,11 @@ export function TopBar() {
   return (
     <header className="glass relative z-40 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/8 px-4">
       {/* Left — wordmark */}
-      <div className="flex items-center gap-3">
+      <Link
+        href="/"
+        aria-label="Go to NER-SHIELD homepage"
+        className="flex items-center gap-3"
+      >
         <div className="relative grid h-9 w-9 place-items-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
           <Shield size={18} strokeWidth={2.2} />
         </div>
@@ -140,7 +148,7 @@ export function TopBar() {
             Disaster Intelligence
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Center — tagline (only when there is guaranteed room) */}
       <div className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 min-[1440px]:block">

@@ -110,7 +110,7 @@ export function FieldReportModal() {
             {/* Severity */}
             <div>
               <p className="eyebrow mb-2">Severity</p>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {SEVERITIES.map((s) => {
                   const sev = SEVERITY[s];
                   const active = severity === s;

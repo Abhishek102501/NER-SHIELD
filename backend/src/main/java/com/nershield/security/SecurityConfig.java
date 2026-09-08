@@ -72,6 +72,15 @@ public class SecurityConfig {
                                         // /api/threats above.
                                         .requestMatchers(HttpMethod.GET, "/api/incidents")
                                         .permitAll()
+                                        // Escalation alert feed and acknowledgement — see
+                                        // AlertController. Same public-for-now rationale as
+                                        // /api/threats above; acknowledge is a demo-state
+                                        // mutation with no sensitive data, not a privileged
+                                        // action.
+                                        .requestMatchers(HttpMethod.GET, "/api/alerts")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.PATCH, "/api/alerts/*/acknowledge")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .exceptionHandling(

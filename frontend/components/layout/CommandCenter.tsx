@@ -3,9 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutPanelLeft, PanelRightOpen, Radar } from "lucide-react";
 import { CommandMap } from "@/components/map/CommandMap";
-import { LayerControl } from "@/components/map/LayerControl";
 import { MapLegend } from "@/components/map/MapLegend";
-import { PrimaryActions } from "@/components/map/PrimaryActions";
 import { FieldReportModal } from "@/components/reports/FieldReportModal";
 import { SimulationModal } from "@/components/simulation/SimulationModal";
 import { SYSTEM_METRICS } from "@/data/system";
@@ -68,11 +66,6 @@ function Shell() {
           <div className="relative min-h-0 flex-1 overflow-hidden">
             <CommandMap />
             <MapLegend />
-
-            <div className="absolute left-3 top-3 z-20 flex items-start gap-2">
-              <PrimaryActions />
-              <LayerControl />
-            </div>
 
             {!isDesktop && (
               <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
