@@ -4,18 +4,10 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Bell, Box, ChevronDown, MapPin, Satellite, ShieldAlert } from "lucide-react";
 import { EASE_OUT } from "@/lib/motion";
-import { HERO_HOTSPOTS } from "@/data/hero-feed";
-import { NE_STATE_BOUNDARIES, makeNeProjector } from "@/data/ne-boundary";
 import { CapabilityIndicators } from "./CapabilityIndicators";
 import { HeroBadge } from "./HeroBadge";
 import { HeroMetricCard } from "./HeroMetricCard";
 import { AlertBarsGraph, SparklineGraph, ZonesGraph } from "./MetricGraph";
-import { NeMapVisual } from "./NeMapVisual";
-import { RiskHotspot } from "./RiskHotspot";
-
-// Shared projector: the map SVG's viewBox and the DOM label/hotspot overlay both use
-// this exact 0–100 space, so labels land precisely on their real state polygon.
-const projectNe = makeNeProjector(100, 100, 6);
 
 export function Hero() {
   return (
@@ -47,42 +39,7 @@ export function Hero() {
 
       {/* Hero Content */}
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
-        {/* This row's own box is the coordinate space for the terrain overlay
-            below — scoping it here (not the whole section) keeps region
-            labels / hotspots out of the metric-cards row underneath. */}
-        <div className="relative flex flex-col gap-10 lg:min-h-135 lg:flex-row lg:items-start lg:justify-between">
-          {/* Glowing wireframe map of the real NE-India state boundaries — confined to
-              the right portion of the row so it never sits under the text column. */}
-          <div className="pointer-events-none absolute inset-y-0 left-[48%] right-0 z-0 hidden lg:block">
-            <NeMapVisual className="h-full w-full opacity-90" />
-          </div>
-
-          {/* Region labels + risk hotspots — positioned by the SAME projector, in the
-              SAME box, as the map above, so they land exactly on their real state/city. */}
-          <div className="pointer-events-none absolute inset-y-0 left-[48%] right-0 z-2 hidden lg:block">
-            {NE_STATE_BOUNDARIES.map((s, i) => {
-              const [x, y] = projectNe(s.centroid);
-              return (
-                <motion.span
-                  key={s.name}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.7 + i * 0.06 }}
-                  className="numeric absolute -translate-x-1/2 text-[10px] tracking-[0.14em] text-fg-dim/80"
-                  style={{ left: `${x}%`, top: `${y}%` }}
-                >
-                  {s.name}
-                </motion.span>
-              );
-            })}
-            <div className="pointer-events-auto">
-              {HERO_HOTSPOTS.map((h, i) => {
-                const [x, y] = projectNe(h.lngLat);
-                return <RiskHotspot key={h.id} hotspot={h} x={x} y={y} delay={0.9 + i * 0.15} />;
-              })}
-            </div>
-          </div>
-
+        <div className="relative flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
           {/* Left: headline column */}
           <div className="relative z-10 max-w-xl">
             <HeroBadge>SIH 2026 · AI DISASTER INTELLIGENCE PLATFORM</HeroBadge>
