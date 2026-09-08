@@ -1,9 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll } from "framer-motion";
-import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRef } from "react";
 import { ArrowRight, Bell, Box, ChevronDown, MapPin, Satellite, ShieldAlert } from "lucide-react";
 import { EASE_OUT } from "@/lib/motion";
 import { HERO_HOTSPOTS } from "@/data/hero-feed";
@@ -19,31 +17,19 @@ import { RiskHotspot } from "./RiskHotspot";
 // this exact 0–100 space, so labels land precisely on their real state polygon.
 const projectNe = makeNeProjector(100, 100, 6);
 
-const HeroCanvas = dynamic(() => import("./HeroCanvas"), { ssr: false });
-
 export function Hero() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const reduce = useReducedMotion();
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end start"],
-  });
-
   return (
     <section
       id="top"
-      ref={sectionRef}
       className="relative flex min-h-[100vh] w-full flex-col justify-between overflow-hidden border-b border-white/5 bg-ink pb-14 pt-28 sm:pt-32"
     >
-      {/* 3D WebGL Digital Twin Terrain Canvas Background */}
-      <div className="absolute inset-0 z-0">
-        {!reduce ? (
-          <HeroCanvas scroll={scrollYProgress} />
-        ) : (
-          <div className="pointer-events-none absolute inset-0 map-grid opacity-60" />
-        )}
-      </div>
+      {/* Hero background photograph — North-East India terrain. Fills the section,
+          preserves aspect ratio (cropped, never stretched), never repeats. */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/hero-background.png')" }}
+        aria-hidden="true"
+      />
 
       {/* Legibility gradient: darker toward the text column and edges */}
       <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-ink via-ink/55 to-ink/10" />
