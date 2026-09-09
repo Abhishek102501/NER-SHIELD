@@ -24,7 +24,7 @@ export function HeroMetricCard({ icon, label, value, meta, graph, index = 0 }: H
       className={cn(
         "group relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] p-5",
         "transition-[border-color,background-color,box-shadow] duration-300",
-        "hover:border-accent/30 hover:bg-white/[0.03] hover:shadow-[0_0_0_1px_rgba(34,211,238,0.12),0_20px_44px_-24px_rgba(34,211,238,0.35)]",
+        "hover:border-accent/30 hover:bg-white/[0.03] hover:shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_20px_44px_-24px_rgba(34,197,94,0.35)]",
       )}
     >
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

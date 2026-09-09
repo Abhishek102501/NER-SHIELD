@@ -38,13 +38,13 @@ export function WeatherChart() {
         >
           <defs>
             <linearGradient id="rainFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.5} />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="#84cc16" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="#84cc16" stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <XAxis
             dataKey="hour"
-            tick={{ fill: "#5f6c83", fontSize: 9 }}
+            tick={{ fill: "#9ca3af", fontSize: 9 }}
             tickLine={false}
             axisLine={false}
             interval="preserveStartEnd"
@@ -52,17 +52,17 @@ export function WeatherChart() {
           <YAxis hide domain={[0, "dataMax + 8"]} />
           <Tooltip
             content={<RainTooltip />}
-            cursor={{ stroke: "rgba(56,189,248,0.4)", strokeDasharray: "3 3" }}
+            cursor={{ stroke: "rgba(132,204,22,0.4)", strokeDasharray: "3 3" }}
           />
           <Area
             type="monotone"
             dataKey="mm"
-            stroke="#38bdf8"
+            stroke="#84cc16"
             strokeWidth={2}
             fill="url(#rainFill)"
             animationDuration={1100}
             dot={false}
-            activeDot={{ r: 3, fill: "#38bdf8", stroke: "#0b1120" }}
+            activeDot={{ r: 3, fill: "#84cc16", stroke: "#0e1a13" }}
           />
         </AreaChart>
       </ResponsiveContainer>

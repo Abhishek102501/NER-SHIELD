@@ -16,7 +16,7 @@ import type { ThreatDataSource } from "@/services/threats";
 const ThreatMap = dynamic(() => import("@/components/map/ThreatMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-[#060a14] text-fg-dim">
+    <div className="flex h-full w-full items-center justify-center bg-[#0a1610] text-fg-dim">
       <Loader2 size={20} className="animate-spin" />
     </div>
   ),

@@ -15,7 +15,7 @@ import type { RiskZone } from "@/types";
 const LiveMap = dynamic(() => import("@/components/map/LiveMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-[#060a14] text-fg-dim">
+    <div className="flex h-full w-full items-center justify-center bg-[#0a1610] text-fg-dim">
       <Loader2 size={20} className="animate-spin" />
     </div>
   ),

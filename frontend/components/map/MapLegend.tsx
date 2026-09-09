@@ -63,7 +63,7 @@ export function MapLegend() {
                   <span className="text-[11px] text-fg-muted">Incident cluster</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_6px_1px_rgba(34,211,238,0.7)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_6px_1px_rgba(34,197,94,0.7)]" />
                   <span className="text-[11px] text-fg-muted">Search result</span>
                 </div>
               </div>

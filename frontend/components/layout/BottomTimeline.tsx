@@ -85,7 +85,7 @@ export function BottomTimeline() {
                 className={cn(
                   "numeric rounded-md px-2 py-1 text-[10px] font-semibold transition-all duration-200",
                   r.id === rangeId
-                    ? "bg-accent/15 text-accent shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_0_10px_rgba(34,211,238,0.25)]"
+                    ? "bg-accent/15 text-accent shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_0_10px_rgba(34,197,94,0.25)]"
                     : "text-fg-dim hover:bg-white/5 hover:text-fg-muted",
                 )}
               >

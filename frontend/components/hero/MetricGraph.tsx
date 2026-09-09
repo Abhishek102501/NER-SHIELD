@@ -37,9 +37,9 @@ export function AlertBarsGraph({
 }) {
   const total = Math.max(1, high + medium + low);
   const bars = [
-    { count: high, color: "#ef4444" },
-    { count: medium, color: "#eab308" },
-    { count: low, color: "#38bdf8" },
+    { count: high, color: "#dc2626" },
+    { count: medium, color: "#f59e0b" },
+    { count: low, color: "#22c55e" },
   ];
   return (
     <div className="flex h-9 items-end gap-1">
@@ -60,9 +60,9 @@ export function AlertBarsGraph({
 /** Tiny highlighted-zone terrain glyph, used by the Critical Hazard Zones card. */
 export function ZonesGraph() {
   const dots = [
-    { cx: 18, cy: 20, r: 4, color: "#ef4444" },
+    { cx: 18, cy: 20, r: 4, color: "#dc2626" },
     { cx: 46, cy: 10, r: 3, color: "#f97316" },
-    { cx: 70, cy: 22, r: 3, color: "#eab308" },
+    { cx: 70, cy: 22, r: 3, color: "#f59e0b" },
   ];
   return (
     <svg viewBox="0 0 88 32" className="h-9 w-22 overflow-visible">

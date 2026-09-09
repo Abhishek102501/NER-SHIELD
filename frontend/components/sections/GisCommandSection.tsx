@@ -15,7 +15,7 @@ import { SEVERITY, cn } from "@/lib/utils";
 const LiveMap = dynamic(() => import("@/components/map/LiveMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-[#0d121f] text-white/50">
+    <div className="flex h-full w-full items-center justify-center bg-[#0d1a12] text-white/50">
       <Loader2 size={20} className="animate-spin" />
     </div>
   ),
@@ -61,7 +61,7 @@ export function GisCommandSection() {
         initial="hidden"
         whileInView="show"
         viewport={REVEAL_VIEWPORT}
-        className="rounded-xl bg-[#09090b] overflow-hidden border border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.8)]"
+        className="rounded-xl bg-[#0b100c] overflow-hidden border border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.8)]"
       >
         {/* Toolbar in code-editor-mockup style */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/15 px-5 py-3.5 bg-black/60">

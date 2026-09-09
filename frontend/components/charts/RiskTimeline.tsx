@@ -143,7 +143,7 @@ function EventMarker({ cx, cy, event, active, onSelect }: EventMarkerProps) {
       <circle
         r={active ? 4.5 : 3.5}
         fill={color}
-        stroke="#05070e"
+        stroke="#08100d"
         strokeWidth={1.5}
         style={{ filter: `drop-shadow(0 0 4px ${color}aa)` }}
       />
@@ -255,7 +255,7 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
                   y={y + 12}
                   textAnchor="middle"
                   className="numeric"
-                  fill={isNow ? "#22d3ee" : "#5f6c83"}
+                  fill={isNow ? "#22c55e" : "#9ca3af"}
                   fontSize={9}
                   fontWeight={isNow ? 700 : 500}
                 >
@@ -276,7 +276,7 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
           {/* Observed vs forecast zone labels + NOW divider */}
           <ReferenceLine
             x={0}
-            stroke="#22d3ee"
+            stroke="#22c55e"
             strokeOpacity={0.6}
             strokeDasharray="3 3"
             label={(props: { viewBox?: { x?: number; y?: number } }) => {
@@ -284,13 +284,13 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
               const vy = props.viewBox?.y ?? 0;
               return (
                 <g>
-                  <text x={vx} y={vy - 3} textAnchor="middle" fontSize={8} fontWeight={700} fill="#22d3ee" className="numeric">
+                  <text x={vx} y={vy - 3} textAnchor="middle" fontSize={8} fontWeight={700} fill="#22c55e" className="numeric">
                     NOW
                   </text>
-                  <text x={vx - 8} y={vy + 11} textAnchor="end" fontSize={8} fill="#5f6c83" className="numeric uppercase tracking-wider">
+                  <text x={vx - 8} y={vy + 11} textAnchor="end" fontSize={8} fill="#9ca3af" className="numeric uppercase tracking-wider">
                     Observed
                   </text>
-                  <text x={vx + 8} y={vy + 11} textAnchor="start" fontSize={8} fill="#22d3ee" fillOpacity={0.8} className="numeric uppercase tracking-wider">
+                  <text x={vx + 8} y={vy + 11} textAnchor="start" fontSize={8} fill="#22c55e" fillOpacity={0.8} className="numeric uppercase tracking-wider">
                     Forecast
                   </text>
                 </g>
@@ -308,7 +308,7 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
             isAnimationActive
             animationDuration={700}
             dot={false}
-            activeDot={{ r: 4, stroke: "#05070e", strokeWidth: 2 }}
+            activeDot={{ r: 4, stroke: "#08100d", strokeWidth: 2 }}
           />
           <Area
             type="monotone"
@@ -322,7 +322,7 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
             isAnimationActive
             animationDuration={700}
             dot={false}
-            activeDot={{ r: 4, stroke: "#05070e", strokeWidth: 2, opacity: 0.85 }}
+            activeDot={{ r: 4, stroke: "#08100d", strokeWidth: 2, opacity: 0.85 }}
           />
 
           {/* NOW glow marker at the current risk value */}
@@ -333,9 +333,9 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
               const { cx, cy } = props;
               if (cx == null || cy == null) return <g />;
               return (
-                <g transform={`translate(${cx},${cy})`} style={{ color: "#22d3ee" }}>
+                <g transform={`translate(${cx},${cy})`} style={{ color: "#22c55e" }}>
                   <circle r={9} className="pulse-ring" />
-                  <circle r={4} fill="#22d3ee" stroke="#05070e" strokeWidth={2} />
+                  <circle r={4} fill="#22c55e" stroke="#08100d" strokeWidth={2} />
                 </g>
               );
             }}

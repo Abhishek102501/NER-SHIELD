@@ -42,10 +42,10 @@ export function SiteFooter() {
               SYSTEM MODULES
             </span>
             <ul className="space-y-2 body-sm text-fg-muted">
-              <li><a href="#terrain" className="hover:text-fg transition-colors">3D Digital Twin</a></li>
-              <li><a href="#prediction" className="hover:text-fg transition-colors">Risk Matrix Explorer</a></li>
-              <li><a href="#command" className="hover:text-fg transition-colors">GIS Command Center</a></li>
-              <li><a href="#response" className="hover:text-fg transition-colors">Disaster Response Loop</a></li>
+              <li><a href="#terrain" className="text-fg-muted hover:text-fg transition-colors">3D Digital Twin</a></li>
+              <li><a href="#prediction" className="text-fg-muted hover:text-fg transition-colors">Risk Matrix Explorer</a></li>
+              <li><a href="#command" className="text-fg-muted hover:text-fg transition-colors">GIS Command Center</a></li>
+              <li><a href="#response" className="text-fg-muted hover:text-fg transition-colors">Disaster Response Loop</a></li>
             </ul>
           </div>
 

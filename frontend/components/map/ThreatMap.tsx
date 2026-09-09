@@ -29,11 +29,11 @@ const SEARCH_ZOOM_BY_CATEGORY: Record<LocationResult["category"], number> = {
 const SEARCH_MARKER_ICON = L.divIcon({
   className: "ns-threat-search-marker",
   html: `
-    <div class="ns-intel-marker is-active" style="--marker-color:#22d3ee">
+    <div class="ns-intel-marker is-active" style="--marker-color:#22c55e">
       <span class="ns-intel-marker-glow"></span>
       <span class="ns-intel-marker-pulse pulse-ring"></span>
       <span class="ns-intel-marker-core">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="#05070e" stroke="none"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#08100d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="#08100d" stroke="none"/></svg>
       </span>
     </div>
   `,
@@ -108,7 +108,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const RISK_COLOR: Record<ThreatRisk, string> = {
-  high: "#ef4444",
+  high: "#dc2626",
   medium: "#f97316",
   low: "#22c55e",
 };
@@ -206,7 +206,7 @@ export default function ThreatMap({
         zoomControl={false}
         attributionControl={false}
         className={cn("ns-threatmap", className)}
-        style={{ width: "100%", height: "100%", background: "#060a14" }}
+        style={{ width: "100%", height: "100%", background: "#0a1610" }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

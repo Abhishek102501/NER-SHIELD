@@ -1,31 +1,44 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Bell, Box, ChevronDown, MapPin, Satellite, ShieldAlert } from "lucide-react";
-import { EASE_OUT } from "@/lib/motion";
-import { CapabilityIndicators } from "./CapabilityIndicators";
-import { HeroBadge } from "./HeroBadge";
-import { HeroMetricCard } from "./HeroMetricCard";
-import { AlertBarsGraph, SparklineGraph, ZonesGraph } from "./MetricGraph";
+import { Satellite } from "lucide-react";
 
 export function Hero() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <section
       id="top"
-      className="relative flex min-h-[100vh] w-full flex-col justify-between overflow-hidden border-b border-white/5 bg-ink pb-14 pt-28 sm:pt-32"
+      className="relative flex h-[100vh] w-full flex-col overflow-hidden border-b border-white/5 bg-ink pt-28 sm:pt-32"
     >
-      {/* Hero background photograph — North-East India terrain. Fills the section,
-          preserves aspect ratio (cropped, never stretched), never repeats. */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/hero-background.png')" }}
-        aria-hidden="true"
-      />
+      {/* Hero background — looping NE-India risk-map video. Fills the section,
+          preserves aspect ratio (cropped via object-cover, never stretched),
+          never tiles. Falls back to the static poster frame for visitors who
+          prefer reduced motion, instead of autoplaying. */}
+      {reduceMotion ? (
+        <div
+          className="absolute inset-0 z-0 h-screen w-full bg-cover bg-no-repeat"
+          style={{ backgroundImage: "url('/hero-background.png')", backgroundPosition: "70% center" }}
+          aria-hidden="true"
+        />
+      ) : (
+        <video
+          className="absolute inset-0 z-0 h-screen w-full object-cover"
+          style={{ objectPosition: "70% center" }}
+          src="/hero-background.mp4"
+          poster="/hero-background.png"
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden="true"
+        />
+      )}
 
       {/* Legibility gradient: darker toward the text column and edges */}
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-ink via-ink/55 to-ink/10" />
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-ink/40 via-transparent to-ink" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-ink via-ink/68 to-ink/25" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-ink/55 via-ink/15 to-ink" />
 
       {/* Satellite decoration */}
       <div className="pointer-events-none absolute right-[6%] top-[9%] z-2 hidden flex-col items-end gap-1 lg:flex">
@@ -37,129 +50,46 @@ export function Hero() {
         </span>
       </div>
 
-      {/* Hero Content */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
-        <div className="relative flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
-          {/* Left: headline column */}
-          <div className="relative z-10 max-w-xl">
-            <HeroBadge>SIH 2026 · AI DISASTER INTELLIGENCE PLATFORM</HeroBadge>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.1 }}
-              className="text-balance text-5xl font-bold leading-[1.05] tracking-tight text-fg sm:text-6xl"
-            >
-              Predict disasters.
-              <br />
-              <span className="bg-gradient-to-r from-accent to-accent-2 bg-clip-text text-transparent">
-                Before they become disasters.
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.2 }}
-              className="mt-6 max-w-md text-pretty text-[15px] leading-relaxed text-fg-muted"
-            >
-              A multi-dimensional AI digital twin fusing real-time rainfall radar,
-              slope stability, soil saturation, and satellite signals to detect and
-              simulate disasters across North-East India.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.3 }}
-              className="mt-8 flex flex-wrap items-center gap-3"
-            >
-              <Link href="/command" className="button-primary group">
-                <span>Launch Command Center</span>
-                <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-
-              <a href="#terrain" className="button-secondary group">
-                <Box size={15} className="text-accent transition-transform group-hover:rotate-12" />
-                <span>Explore Digital Twin</span>
-              </a>
-            </motion.div>
-
-            <CapabilityIndicators />
-          </div>
-        </div>
-
-        {/* 3-Up Premium Metric Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE_OUT, delay: 0.4 }}
-          className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-3"
+      {/* Hero Content — centered headline block fills the available vertical space */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <h1
+          className="whitespace-nowrap font-serif font-normal uppercase text-white"
+          style={{
+            fontSize: "clamp(8px, 3.9vw, 4.75rem)",
+            letterSpacing: "0.12em",
+            lineHeight: 1.15,
+          }}
         >
-          <HeroMetricCard
-            index={0}
-            icon={<ShieldAlert size={13} />}
-            label="Peak Risk Index"
-            value={
-              <div className="flex items-baseline gap-2">
-                <span className="numeric text-3xl font-bold text-fg">87.4%</span>
-              </div>
-            }
-            meta={
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sev-critical">
-                  ↑ 12.8%
-                </span>
-                <span className="text-[11px] text-fg-dim">from previous hour</span>
-              </div>
-            }
-            graph={<SparklineGraph color="#ef4444" />}
-          />
+          Predict disasters.
+          <br />
+          Before they become disasters.
+        </h1>
 
-          <HeroMetricCard
-            index={1}
-            icon={<Bell size={13} />}
-            label="Active Alerts"
-            value={<span className="numeric text-3xl font-bold text-fg">14</span>}
-            meta={
-              <div className="flex items-center gap-2.5 text-[10.5px] text-fg-dim">
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-sev-critical" /> 8 High
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-sev-moderate" /> 4 Medium
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-2" /> 2 Low
-                </span>
-              </div>
-            }
-            graph={<AlertBarsGraph high={8} medium={4} low={2} />}
-          />
-
-          <HeroMetricCard
-            index={2}
-            icon={<MapPin size={13} />}
-            label="Critical Hazard Zones"
-            value={<span className="numeric text-3xl font-bold text-fg">03</span>}
-            meta={<span className="text-[11px] text-fg-dim">NH-27 &amp; Teesta corridor</span>}
-            graph={<ZonesGraph />}
-          />
-        </motion.div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div className="relative z-10 mx-auto mt-10 flex w-full max-w-7xl items-center justify-between px-6 text-fg-dim">
-        <span className="caption-mono text-[10px]">
-          GEOSPATIAL INTELLIGENCE · NORTH-EAST REGION
+        <span
+          className="mt-10 whitespace-nowrap uppercase text-white/60 sm:mt-12"
+          style={{
+            fontSize: "clamp(8px, calc(4vw - 3px), 12px)",
+            letterSpacing: "clamp(0px, calc(2.2vw - 8.5px), 4.2px)",
+          }}
+        >
+          AI landslide intelligence for North-East India
         </span>
-        <a
-          href="#terrain"
-          className="flex items-center gap-1 text-[10px] font-medium tracking-wide transition-colors hover:text-fg"
+
+        <Link
+          href="/command"
+          className="mt-9 border uppercase text-[#F2EFE6]"
+          style={{
+            borderColor: "#F2EFE6",
+            borderWidth: 1,
+            borderRadius: 2,
+            fontSize: 10,
+            letterSpacing: "0.2em",
+            padding: "14px 32px",
+            background: "transparent",
+          }}
         >
-          <span>SCROLL DOWN</span>
-          <ChevronDown size={12} />
-        </a>
+          Command Center
+        </Link>
       </div>
     </section>
   );

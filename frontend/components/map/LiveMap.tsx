@@ -121,12 +121,12 @@ const ICON_PATH: Record<string, string> = {
 
 function coreIconSvg(kind: "alert" | "check" | "sensor" | "pin"): string {
   if (kind === "sensor") {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="2.4"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="8" stroke-opacity="0.55"/></svg>';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#08100d" stroke-width="2.4"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="8" stroke-opacity="0.55"/></svg>';
   }
   if (kind === "pin") {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="#05070e" stroke="none"/></svg>';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#08100d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="#08100d" stroke="none"/></svg>';
   }
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="#05070e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ICON_PATH[kind]}</svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="#08100d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ICON_PATH[kind]}</svg>`;
 }
 
 function severityIconKind(severity: Severity): "alert" | "check" {
@@ -364,7 +364,7 @@ export default function LiveMap({
       title: string,
       severity: Severity | null,
     ) {
-      const color = severity ? SEVERITY[severity].hex : "#22d3ee";
+      const color = severity ? SEVERITY[severity].hex : "#22c55e";
       const animated = severity === "critical" || severity === "high";
       const isSensor = kind === "sensor";
       const el = buildMarkerEl({
@@ -416,9 +416,9 @@ export default function LiveMap({
         type: "hillshade",
         source: "terrainSource",
         paint: {
-          "hillshade-shadow-color": "#000814",
-          "hillshade-highlight-color": "#16233a",
-          "hillshade-accent-color": "#0b1120",
+          "hillshade-shadow-color": "#04120a",
+          "hillshade-highlight-color": "#1a2f22",
+          "hillshade-accent-color": "#0e1a13",
           "hillshade-exaggeration": 0.35,
         },
       });
@@ -480,13 +480,13 @@ export default function LiveMap({
             0,
             "rgba(0,0,0,0)",
             0.3,
-            "rgba(34,211,238,0.3)",
+            "rgba(34,197,94,0.3)",
             0.6,
-            "rgba(56,189,248,0.45)",
+            "rgba(132,204,22,0.45)",
             0.8,
             "rgba(249,115,22,0.55)",
             1,
-            "rgba(239,68,68,0.65)",
+            "rgba(220,38,38,0.65)",
           ],
         },
       });
@@ -500,7 +500,7 @@ export default function LiveMap({
         type: "line",
         source: "rivers",
         paint: {
-          "line-color": "#38bdf8",
+          "line-color": "#84cc16",
           "line-width": 2.5,
           "line-opacity": 0.5,
         },
@@ -530,7 +530,7 @@ export default function LiveMap({
         type: "fill",
         source: "risk-zones",
         paint: {
-          "fill-color": ["coalesce", ["get", "color"], "#ef4444"],
+          "fill-color": ["coalesce", ["get", "color"], "#dc2626"],
           "fill-opacity": 0.1,
         },
       });
@@ -540,7 +540,7 @@ export default function LiveMap({
         type: "fill",
         source: "risk-zones",
         paint: {
-          "fill-color": ["coalesce", ["get", "color"], "#ef4444"],
+          "fill-color": ["coalesce", ["get", "color"], "#dc2626"],
           "fill-opacity": [
             "case",
             ["boolean", ["feature-state", "hover"], false],
@@ -555,7 +555,7 @@ export default function LiveMap({
         type: "line",
         source: "risk-zones",
         paint: {
-          "line-color": ["coalesce", ["get", "color"], "#ef4444"],
+          "line-color": ["coalesce", ["get", "color"], "#dc2626"],
           "line-width": 1.5,
           "line-opacity": 0.8,
         },
@@ -586,7 +586,7 @@ export default function LiveMap({
         paint: {
           "circle-radius": 3.5,
           "circle-color": "#94a3b8",
-          "circle-stroke-color": "#05070e",
+          "circle-stroke-color": "#08100d",
           "circle-stroke-width": 1.5,
         },
       });
@@ -599,7 +599,7 @@ export default function LiveMap({
         paint: {
           "circle-radius": 3.5,
           "circle-color": "#a78bfa",
-          "circle-stroke-color": "#05070e",
+          "circle-stroke-color": "#08100d",
           "circle-stroke-width": 1.5,
         },
       });
@@ -625,7 +625,7 @@ export default function LiveMap({
         paint: {
           "circle-color": "#f97316",
           "circle-opacity": 0.85,
-          "circle-stroke-color": "#05070e",
+          "circle-stroke-color": "#08100d",
           "circle-stroke-width": 2,
           "circle-radius": [
             "step",
@@ -650,7 +650,7 @@ export default function LiveMap({
           "text-font": ["Noto Sans Bold"],
         },
         paint: {
-          "text-color": "#05070e",
+          "text-color": "#08100d",
         },
       });
 
@@ -661,8 +661,8 @@ export default function LiveMap({
         filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-radius": 6,
-          "circle-color": ["coalesce", ["get", "color"], "#eab308"],
-          "circle-stroke-color": "#05070e",
+          "circle-color": ["coalesce", ["get", "color"], "#f59e0b"],
+          "circle-stroke-color": "#08100d",
           "circle-stroke-width": 1.5,
         },
       });
@@ -675,7 +675,7 @@ export default function LiveMap({
         if (layer.type === "symbol") {
           try {
             map.setPaintProperty(layer.id, "text-color", "#7d93ad");
-            map.setPaintProperty(layer.id, "text-halo-color", "#05070e");
+            map.setPaintProperty(layer.id, "text-halo-color", "#08100d");
             map.setPaintProperty(layer.id, "text-halo-width", 1.2);
           } catch {
             // Some symbol layers (icons only) have no text paint props — ignore.
@@ -749,7 +749,7 @@ export default function LiveMap({
         showSearchResult: (result) => {
           searchMarker?.remove();
           const el = buildMarkerEl({
-            color: "#22d3ee",
+            color: "#22c55e",
             animated: true,
             isSensor: false,
             iconKind: "pin",
@@ -1155,7 +1155,7 @@ function MapPopup({
     Icon = RadioTower;
   }
 
-  const accent = severity ? SEVERITY[severity].hex : "#22d3ee";
+  const accent = severity ? SEVERITY[severity].hex : "#22c55e";
 
   return (
     <motion.div

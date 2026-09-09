@@ -39,7 +39,7 @@ const SIGNALS: Signal[] = [
     value: m.rainfall72h,
     unit: "mm / 72h",
     meter: 92,
-    gradient: "linear-gradient(90deg, #ef4444 0%, #f97316 100%)",
+    gradient: "linear-gradient(90deg, #dc2626 0%, #f97316 100%)",
     caption: "2.4× seasonal alert threshold.",
     detail: "Cloudburst detection over East Khasi Hills & Cherrapunji radar stations.",
   },
@@ -50,7 +50,7 @@ const SIGNALS: Signal[] = [
     value: m.soilMoisture,
     unit: "%",
     meter: m.soilMoisture,
-    gradient: "linear-gradient(90deg, #f97316 0%, #eab308 100%)",
+    gradient: "linear-gradient(90deg, #f97316 0%, #f59e0b 100%)",
     caption: "Past the 70% failure threshold.",
     detail: "Pore-water pressure reduces soil shear strength along steep slopes.",
   },
@@ -61,7 +61,7 @@ const SIGNALS: Signal[] = [
     value: m.slope,
     unit: "° steepness",
     meter: (m.slope / 60) * 100,
-    gradient: "linear-gradient(90deg, #22d3ee 0%, #38bdf8 100%)",
+    gradient: "linear-gradient(90deg, #22c55e 0%, #84cc16 100%)",
     caption: "Cut-slope steepness along NH-27.",
     detail: "Geotechnical sensors indicate structural micro-displacement.",
   },
@@ -72,7 +72,7 @@ const SIGNALS: Signal[] = [
     value: m.elevation,
     unit: "meters MSL",
     meter: 64,
-    gradient: "linear-gradient(90deg, #38bdf8 0%, #22d3ee 100%)",
+    gradient: "linear-gradient(90deg, #84cc16 0%, #22c55e 100%)",
     caption: "High-precision 10m Cartosat DEM.",
     detail: "SAR interferometry mapping topographical shifts in real-time.",
   },
@@ -111,7 +111,7 @@ export function TerrainIntelligence() {
               onClick={() => setActiveSignal(s.id)}
               className={`card-marketing cursor-pointer p-6 transition-all ${
                 isSelected
-                  ? "ring-2 ring-accent border-transparent bg-white/[0.02] shadow-[0_8px_32px_rgba(34,211,238,0.18)]"
+                  ? "ring-2 ring-accent border-transparent bg-white/[0.02] shadow-[0_8px_32px_rgba(34,197,94,0.18)]"
                   : "hover:border-white/15"
               }`}
             >
@@ -173,7 +173,7 @@ export function TerrainIntelligence() {
               </p>
             </div>
           </div>
-          <span className="caption-mono text-[11px] text-fg bg-gradient-to-r from-accent/20 to-blue-500/20 px-3.5 py-1.5 rounded-full border border-accent/30 shrink-0 font-semibold">
+          <span className="caption-mono text-[11px] text-fg bg-gradient-to-r from-accent/20 to-accent-2/20 px-3.5 py-1.5 rounded-full border border-accent/30 shrink-0 font-semibold">
             TELEMETRY STREAM: 100% NOMINAL
           </span>
         </motion.div>

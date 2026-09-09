@@ -91,7 +91,7 @@ export function SiteNav() {
           className="flex items-center gap-2.5"
           onClick={() => setMenuOpen(false)}
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-accent/30 bg-accent/10 text-accent shadow-[0_0_18px_-4px_rgba(34,211,238,0.5)]">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-accent/30 bg-accent/10 text-accent shadow-[0_0_18px_-4px_rgba(34,197,94,0.5)]">
             <Shield size={17} strokeWidth={2.2} />
           </span>
           <span className="flex flex-col leading-none">
@@ -128,7 +128,7 @@ export function SiteNav() {
                 <span className="relative z-10 inline-flex items-center gap-1.5">
                   {l.label}
                   {isActive && (
-                    <span className="h-1 w-1 rounded-full bg-accent shadow-[0_0_6px_1px_rgba(34,211,238,0.8)]" />
+                    <span className="h-1 w-1 rounded-full bg-accent shadow-[0_0_6px_1px_rgba(34,197,94,0.8)]" />
                   )}
                 </span>
               </a>
@@ -155,7 +155,7 @@ export function SiteNav() {
 
           <Link
             href="/command"
-            className="group hidden items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[12px] font-semibold text-black shadow-[0_0_0_1px_rgba(34,211,238,0.3),0_10px_28px_-10px_rgba(34,211,238,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.45),0_14px_32px_-8px_rgba(34,211,238,0.7)] sm:inline-flex"
+            className="group hidden items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[12px] font-semibold text-black shadow-[0_0_0_1px_rgba(34,197,94,0.3),0_10px_28px_-10px_rgba(34,197,94,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(34,197,94,0.45),0_14px_32px_-8px_rgba(34,197,94,0.7)] sm:inline-flex"
           >
             Command Center
             <ArrowRight

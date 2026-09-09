@@ -1,0 +1,30 @@
+[project]
+name = "nershield-ml"
+version = "0.1.0"
+description = "NER-SHIELD landslide risk-scoring service (Phase 1: XGBoost binary classifier)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "xgboost>=2.1",
+    "scikit-learn>=1.5",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "shap>=0.46",
+    "geopandas>=1.0",
+    "rasterio>=1.3",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.5",
+    "pyarrow>=17.0",
+    "joblib>=1.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "httpx>=0.27"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
