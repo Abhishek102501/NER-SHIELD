@@ -231,6 +231,24 @@ body {
 }
 
 /* ============================================================
+   HERO VIDEO REEL — crossfade between library clips + a slow,
+   premium Ken Burns drift so the frame never looks static.
+   ============================================================ */
+.hero-reel-video {
+  transition-property: opacity;
+  transition-timing-function: linear;
+  animation: ns-hero-kenburns 24s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+@keyframes ns-hero-kenburns {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-reel-video { animation: none; }
+}
+
+/* ============================================================
    ANIMATIONS (kept subtle & purposeful)
    ============================================================ */
 @keyframes ns-pulse-ring {

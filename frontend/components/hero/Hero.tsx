@@ -5,45 +5,64 @@ import Link from "next/link";
 import { Satellite } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-// How long the two video layers overlap while crossfading into each other at
-// the loop boundary. Long enough to dissolve the cut, short enough that the
-// two frames (end vs. start) never look obviously duplicated on screen.
+// The rotating hero video library. Clips play in this order, indefinitely —
+// add or remove entries here to change what the hero cycles through.
+const HERO_VIDEO_LIBRARY = [
+  "/hero-background.mp4",
+  "/hero-terrain-ridge.mp4",
+  "/hero-hillside-settlement.mp4",
+];
+
+// How long the two video layers overlap while crossfading from one clip into
+// the next. Long enough to dissolve the cut, short enough that the two
+// frames never look obviously superimposed on screen.
 const LOOP_CROSSFADE_S = 1.2;
 
 /**
- * Plays the same clip on two stacked <video> elements and crossfades between
- * them right before each one's loop point, so the restart never shows as a
- * hard cut the way a native `loop` attribute does.
+ * Cycles through a library of clips on two stacked <video> elements,
+ * crossfading from the active clip into the next one (already preloaded on
+ * the idle layer) just before the active clip ends. The result reads as one
+ * continuous, seamlessly looping reel instead of a hard cut between clips.
  */
-function useSeamlessVideoLoop(
+function useVideoLibraryLoop(
   videoARef: React.RefObject<HTMLVideoElement | null>,
   videoBRef: React.RefObject<HTMLVideoElement | null>,
+  sources: string[],
   enabled: boolean,
 ) {
   const [activeVideo, setActiveVideo] = useState<"a" | "b">("a");
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || sources.length === 0) return;
     const a = videoARef.current;
     const b = videoBRef.current;
     if (!a || !b) return;
 
     let current = a;
     let next = b;
+    let playingIndex = 0;
     let switching = false;
     let timeoutId: number | undefined;
+
+    a.src = sources[0];
+    b.src = sources[1 % sources.length];
+    a.load();
+    b.load();
 
     const onTimeUpdate = () => {
       if (switching || !current.duration) return;
       if (current.currentTime >= current.duration - LOOP_CROSSFADE_S) {
         switching = true;
-        next.currentTime = 0;
-        void next.play();
+        next.play().catch(() => {});
         setActiveVideo(current === a ? "b" : "a");
 
         timeoutId = window.setTimeout(() => {
           current.pause();
+          playingIndex = (playingIndex + 1) % sources.length;
+          const upcomingIndex = (playingIndex + 1) % sources.length;
+          current.src = sources[upcomingIndex];
           current.currentTime = 0;
+          current.load();
           [current, next] = [next, current];
           switching = false;
         }, LOOP_CROSSFADE_S * 1000);
@@ -52,14 +71,14 @@ function useSeamlessVideoLoop(
 
     a.addEventListener("timeupdate", onTimeUpdate);
     b.addEventListener("timeupdate", onTimeUpdate);
-    void a.play();
+    a.play().catch(() => {});
 
     return () => {
       a.removeEventListener("timeupdate", onTimeUpdate);
       b.removeEventListener("timeupdate", onTimeUpdate);
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [enabled, videoARef, videoBRef]);
+  }, [enabled, videoARef, videoBRef, sources]);
 
   return activeVideo;
 }
@@ -68,17 +87,18 @@ export function Hero() {
   const reduceMotion = useReducedMotion();
   const videoARef = useRef<HTMLVideoElement>(null);
   const videoBRef = useRef<HTMLVideoElement>(null);
-  const activeVideo = useSeamlessVideoLoop(videoARef, videoBRef, !reduceMotion);
+  const activeVideo = useVideoLibraryLoop(videoARef, videoBRef, HERO_VIDEO_LIBRARY, !reduceMotion);
 
   return (
     <section
       id="top"
       className="relative flex h-[100vh] w-full flex-col overflow-hidden border-b border-white/5 bg-ink pt-28 sm:pt-32"
     >
-      {/* Hero background — looping forest-terrain video. Two stacked <video>
-          layers crossfade into each other just before each one loops, so the
-          restart is invisible instead of a hard cut. Falls back to the
-          static poster frame for visitors who prefer reduced motion. */}
+      {/* Hero background — a rotating library of clips. Two stacked <video>
+          layers crossfade from one clip into the next (preloaded on the idle
+          layer) just before the active one ends, so it plays as one
+          continuous, seamlessly looping reel. Falls back to the static
+          poster frame for visitors who prefer reduced motion. */}
       {reduceMotion ? (
         <div
           className="absolute inset-0 z-0 h-screen w-full bg-cover bg-no-repeat"
@@ -89,13 +109,13 @@ export function Hero() {
         <>
           <video
             ref={videoARef}
-            className="absolute inset-0 z-0 h-screen w-full object-cover transition-opacity ease-linear"
+            className="hero-reel-video absolute inset-0 z-0 h-screen w-full object-cover"
             style={{
               objectPosition: "70% center",
               opacity: activeVideo === "a" ? 1 : 0,
               transitionDuration: `${LOOP_CROSSFADE_S * 1000}ms`,
+              animationPlayState: activeVideo === "a" ? "running" : "paused",
             }}
-            src="/hero-background.mp4"
             poster="/hero-background.png"
             muted
             playsInline
@@ -104,13 +124,13 @@ export function Hero() {
           />
           <video
             ref={videoBRef}
-            className="absolute inset-0 z-0 h-screen w-full object-cover transition-opacity ease-linear"
+            className="hero-reel-video absolute inset-0 z-0 h-screen w-full object-cover"
             style={{
               objectPosition: "70% center",
               opacity: activeVideo === "b" ? 1 : 0,
               transitionDuration: `${LOOP_CROSSFADE_S * 1000}ms`,
+              animationPlayState: activeVideo === "b" ? "running" : "paused",
             }}
-            src="/hero-background.mp4"
             muted
             playsInline
             preload="auto"
