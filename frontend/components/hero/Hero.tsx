@@ -3,19 +3,82 @@
 import { useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { Satellite } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+// How long the two video layers overlap while crossfading into each other at
+// the loop boundary. Long enough to dissolve the cut, short enough that the
+// two frames (end vs. start) never look obviously duplicated on screen.
+const LOOP_CROSSFADE_S = 1.2;
+
+/**
+ * Plays the same clip on two stacked <video> elements and crossfades between
+ * them right before each one's loop point, so the restart never shows as a
+ * hard cut the way a native `loop` attribute does.
+ */
+function useSeamlessVideoLoop(
+  videoARef: React.RefObject<HTMLVideoElement | null>,
+  videoBRef: React.RefObject<HTMLVideoElement | null>,
+  enabled: boolean,
+) {
+  const [activeVideo, setActiveVideo] = useState<"a" | "b">("a");
+
+  useEffect(() => {
+    if (!enabled) return;
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+
+    let current = a;
+    let next = b;
+    let switching = false;
+    let timeoutId: number | undefined;
+
+    const onTimeUpdate = () => {
+      if (switching || !current.duration) return;
+      if (current.currentTime >= current.duration - LOOP_CROSSFADE_S) {
+        switching = true;
+        next.currentTime = 0;
+        void next.play();
+        setActiveVideo(current === a ? "b" : "a");
+
+        timeoutId = window.setTimeout(() => {
+          current.pause();
+          current.currentTime = 0;
+          [current, next] = [next, current];
+          switching = false;
+        }, LOOP_CROSSFADE_S * 1000);
+      }
+    };
+
+    a.addEventListener("timeupdate", onTimeUpdate);
+    b.addEventListener("timeupdate", onTimeUpdate);
+    void a.play();
+
+    return () => {
+      a.removeEventListener("timeupdate", onTimeUpdate);
+      b.removeEventListener("timeupdate", onTimeUpdate);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [enabled, videoARef, videoBRef]);
+
+  return activeVideo;
+}
 
 export function Hero() {
   const reduceMotion = useReducedMotion();
+  const videoARef = useRef<HTMLVideoElement>(null);
+  const videoBRef = useRef<HTMLVideoElement>(null);
+  const activeVideo = useSeamlessVideoLoop(videoARef, videoBRef, !reduceMotion);
 
   return (
     <section
       id="top"
       className="relative flex h-[100vh] w-full flex-col overflow-hidden border-b border-white/5 bg-ink pt-28 sm:pt-32"
     >
-      {/* Hero background — looping NE-India risk-map video. Fills the section,
-          preserves aspect ratio (cropped via object-cover, never stretched),
-          never tiles. Falls back to the static poster frame for visitors who
-          prefer reduced motion, instead of autoplaying. */}
+      {/* Hero background — looping forest-terrain video. Two stacked <video>
+          layers crossfade into each other just before each one loops, so the
+          restart is invisible instead of a hard cut. Falls back to the
+          static poster frame for visitors who prefer reduced motion. */}
       {reduceMotion ? (
         <div
           className="absolute inset-0 z-0 h-screen w-full bg-cover bg-no-repeat"
@@ -23,22 +86,42 @@ export function Hero() {
           aria-hidden="true"
         />
       ) : (
-        <video
-          className="absolute inset-0 z-0 h-screen w-full object-cover"
-          style={{ objectPosition: "70% center" }}
-          src="/hero-background.mp4"
-          poster="/hero-background.png"
-          autoPlay
-          loop
-          muted
-          playsInline
-          aria-hidden="true"
-        />
+        <>
+          <video
+            ref={videoARef}
+            className="absolute inset-0 z-0 h-screen w-full object-cover transition-opacity ease-linear"
+            style={{
+              objectPosition: "70% center",
+              opacity: activeVideo === "a" ? 1 : 0,
+              transitionDuration: `${LOOP_CROSSFADE_S * 1000}ms`,
+            }}
+            src="/hero-background.mp4"
+            poster="/hero-background.png"
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+          />
+          <video
+            ref={videoBRef}
+            className="absolute inset-0 z-0 h-screen w-full object-cover transition-opacity ease-linear"
+            style={{
+              objectPosition: "70% center",
+              opacity: activeVideo === "b" ? 1 : 0,
+              transitionDuration: `${LOOP_CROSSFADE_S * 1000}ms`,
+            }}
+            src="/hero-background.mp4"
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+          />
+        </>
       )}
 
-      {/* Legibility gradient: darker toward the text column and edges */}
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-ink via-ink/68 to-ink/25" />
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-ink/55 via-ink/15 to-ink" />
+      {/* Legibility gradient: much lighter now — the video should read clearly, not sit under a dark wash */}
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-ink/45 via-ink/25 to-ink/10" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-ink/30 via-transparent to-ink/55" />
 
       {/* Satellite decoration */}
       <div className="pointer-events-none absolute right-[6%] top-[9%] z-2 hidden flex-col items-end gap-1 lg:flex">
