@@ -5,12 +5,16 @@ import Link from "next/link";
 import { Satellite } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-// The rotating hero video library. Clips play in this order, indefinitely —
-// add or remove entries here to change what the hero cycles through.
+// The rotating hero video library. Clips play in this order, indefinitely.
+// Each one reads from NEXT_PUBLIC_HERO_VIDEO_n first — set those to CDN/blob
+// URLs in production so the ~99MB of source video ships from an edge/CDN
+// origin instead of bloating the app's own deploy bundle. Falls back to the
+// copies in `public/` for local dev when no env var is set (see
+// .env.example).
 const HERO_VIDEO_LIBRARY = [
-  "/hero-background.mp4",
-  "/hero-terrain-ridge.mp4",
-  "/hero-hillside-settlement.mp4",
+  process.env.NEXT_PUBLIC_HERO_VIDEO_1 || "/hero-background.mp4",
+  process.env.NEXT_PUBLIC_HERO_VIDEO_2 || "/hero-terrain-ridge.mp4",
+  process.env.NEXT_PUBLIC_HERO_VIDEO_3 || "/hero-hillside-settlement.mp4",
 ];
 
 // How long the two video layers overlap while crossfading from one clip into
