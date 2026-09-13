@@ -5,7 +5,9 @@ import { LayoutPanelLeft, PanelRightOpen, Radar } from "lucide-react";
 import { CommandMap } from "@/components/map/CommandMap";
 import { MapLegend } from "@/components/map/MapLegend";
 import { FieldReportModal } from "@/components/reports/FieldReportModal";
+import { DispatchModal } from "@/components/response/DispatchModal";
 import { SimulationModal } from "@/components/simulation/SimulationModal";
+import { ResetDemoModal } from "@/components/system/ResetDemoModal";
 import { SYSTEM_METRICS } from "@/data/system";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { CommandProvider, useCommand } from "@/lib/command-context";
@@ -38,8 +40,10 @@ function Shell() {
     closeMobileNav,
   } = useCommand();
 
-  const leftW = isWide ? 320 : 264;
-  const rightW = isWide ? 342 : 288;
+  // Trimmed toward a compact enterprise-GIS proportion — narrower side docks
+  // leave the map as the dominant element, per the operations-team ask.
+  const leftW = isWide ? 268 : 240;
+  const rightW = isWide ? 320 : 280;
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
@@ -63,7 +67,7 @@ function Shell() {
 
         {/* CENTER — map + bottom timeline */}
         <main className="relative flex min-h-0 flex-1 flex-col">
-          <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="relative min-h-[280px] flex-1 overflow-hidden">
             <CommandMap />
             <MapLegend />
 
@@ -86,7 +90,11 @@ function Shell() {
             )}
           </div>
 
-          <div className="glass z-10 h-49 shrink-0 border-t border-white/8 md:h-58">
+          {/* Compact bottom dock, ~150-165px — the risk chart no longer draws
+              its own redundant Observed/Forecast/NOW text (that info now
+              lives once, in the header above), so it fits cleanly at this
+              height without the label collisions the old chart had. */}
+          <div className="glass z-10 h-40 shrink-0 border-t border-white/8 md:h-42">
             <BottomTimeline />
           </div>
         </main>
@@ -130,6 +138,8 @@ function Shell() {
       {/* Modals */}
       <SimulationModal />
       <FieldReportModal />
+      <DispatchModal />
+      <ResetDemoModal />
     </div>
   );
 }

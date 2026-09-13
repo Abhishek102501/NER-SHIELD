@@ -94,8 +94,9 @@ export function GisCommandSection() {
           </div>
         </div>
 
-        {/* Map Canvas Frame */}
-        <div className="relative h-[440px] sm:h-[540px]">
+        {/* Map Canvas Frame — capped to a viewport fraction so it can never
+            dominate the page on shorter screens. */}
+        <div className="relative h-[360px] max-h-[60vh] sm:h-[440px]">
           <LiveMap
             className="h-full w-full"
             onZoneSelect={setZone}

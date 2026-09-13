@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AttributionControl,
   Map as MLMap,
   Marker as MLMarker,
   NavigationControl,
@@ -9,16 +10,20 @@ import {
   type LngLatLike,
   type MapGeoJSONFeature,
   type MapLayerMouseEvent,
+  type StyleSpecification,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRightLeft,
   Gavel,
+  Home,
+  Hospital,
   KeyRound,
   Link2,
   MapPin,
   RadioTower,
+  Route,
   ShieldAlert,
   TriangleAlert,
   X,
@@ -41,7 +46,7 @@ import {
 
 import { SEVERITY, cn } from "@/lib/utils";
 import type { LocationResult } from "@/services/geocoding";
-import type { RiskZone, Severity, TimelineEvent } from "@/types";
+import type { Incident, InfraStatus, RiskZone, Severity, TimelineEvent } from "@/types";
 
 /** Zoom level to land on per search-result category — tighter for smaller places. */
 const ZOOM_BY_CATEGORY: Record<LocationResult["category"], number> = {
@@ -75,13 +80,57 @@ interface LiveMapProps {
   events?: TimelineEvent[];
   selectedEventId?: string | null;
   onEventSelect?: (id: string | null) => void;
+  /** Live incidents from the command-context single source of truth. When
+   * provided, newly-created incidents (report form, live data) get a marker
+   * as soon as they exist — the seed incidents still render via the
+   * always-there INCIDENT_POINTS pass below, so nothing double-renders
+   * (same ids, same coordinates). Omitted entirely by the homepage preview,
+   * which has no CommandProvider to source it from. */
+  incidents?: Incident[];
+  onIncidentSelect?: (id: string) => void;
 }
 
 const DEFAULT_LAYERS: Record<string, boolean> = {};
 
-// Dark, intelligence-style base — deep near-black land/water, muted borders,
-// low visual noise. Free CARTO GL style, no API key required.
-const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+// Esri World Topographic Map — free, no API key. Switched from raw OpenStreetMap
+// raster (tried first) because plain OSM tiles render whatever script a place's
+// primary OSM name tag happens to use, which produced non-English labels near
+// this region's China/Bhutan/Nepal borders (e.g. a Chinese nature-reserve label
+// bled into the Sikkim viewport). Esri's global topographic basemap carries the
+// same real terrain/forest/river/road/boundary geography but with consistently
+// Latin-script/English place names worldwide, plus baked-in hillshade, contour
+// texture and elevation-labeled peaks — the closest free match to the requested
+// look. No vector OSM style offers per-tile language switching without a paid
+// API key (MapTiler/Stadia/Thunderforest all require one for this).
+const MAP_STYLE: StyleSpecification = {
+  version: 8,
+  // Needed for our own symbol layers (e.g. incident-cluster counts) to render
+  // text — the raster basemap itself has no glyphs of its own.
+  glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+  sources: {
+    "esri-topo": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution:
+        "Esri, HERE, Garmin, FAO, NOAA, USGS, © OpenStreetMap contributors, GIS User Community",
+    },
+  },
+  layers: [
+    {
+      id: "esri-topo",
+      type: "raster",
+      source: "esri-topo",
+      // Untouched — Esri's topo palette is already the muted-GIS target, and
+      // any desaturation/brightness floor just washes out labels and terrain
+      // contrast (readability > extra muting).
+      paint: {},
+    },
+  ],
+};
 
 const TERRAIN_SOURCE = "https://tiles.mapterhorn.com/tilejson.json";
 const TERRAIN_EXAGGERATION = 1.1;
@@ -104,6 +153,9 @@ interface MarkerRecord {
   title: string;
   marker: MLMarker;
   lngLat: [number, number];
+  /** Infrastructure category (hospital/bridge/depot) — drives the granular
+   * layer-visibility check for "sensor"-kind (infrastructure) markers. */
+  infraKind?: string;
 }
 
 interface PopupState {
@@ -113,32 +165,63 @@ interface PopupState {
   y: number;
 }
 
+type IconKind = "alert" | "check" | "sensor" | "pin" | "hospital" | "home" | "road";
+
 const ICON_PATH: Record<string, string> = {
   alert:
     '<line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.3" r="0.6" fill="currentColor" stroke="none"/>',
   check: '<polyline points="5 13 10 18 19 7"/>',
 };
 
-function coreIconSvg(kind: "alert" | "check" | "sensor" | "pin"): string {
+/** Professional, library-style glyphs drawn inline (no emoji) — every marker
+ * renders on a white circular base, so all strokes use currentColor and pick
+ * up the marker's own `--marker-color` via CSS. */
+function coreIconSvg(kind: IconKind): string {
   if (kind === "sensor") {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="#08100d" stroke-width="2.4"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="8" stroke-opacity="0.55"/></svg>';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="8" stroke-opacity="0.55"/></svg>';
   }
   if (kind === "pin") {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="#08100d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="#08100d" stroke="none"/></svg>';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.7-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.1" fill="currentColor" stroke="none"/></svg>';
   }
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="#08100d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ICON_PATH[kind]}</svg>`;
+  if (kind === "hospital") {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg>';
+  }
+  if (kind === "home") {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6.5 10v9.5h11V10"/></svg>';
+  }
+  if (kind === "road") {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M8 20 10.5 4"/><path d="M16 20 13.5 4"/><path d="M12 6v2M12 11v2M12 16v2"/></svg>';
+  }
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ICON_PATH[kind]}</svg>`;
 }
 
 function severityIconKind(severity: Severity): "alert" | "check" {
   return severity === "low" ? "check" : "alert";
 }
 
+/** Infrastructure kind → accent color + glyph (blue/purple/teal per category,
+ * matching the light GIS marker treatment — never emoji). */
+const INFRA_STYLE: Record<string, { color: string; icon: IconKind }> = {
+  hospital: { color: "#2563eb", icon: "hospital" },
+  bridge: { color: "#7c3aed", icon: "road" },
+  depot: { color: "#0d9488", icon: "home" },
+};
+
+/** Bridge condition → color, overriding the category color when a bridge isn't
+ * in normal condition (mirrors the real proximity-to-hazard status on the
+ * bridge record, never an invented alert). */
+const BRIDGE_STATUS_COLOR: Record<string, string> = {
+  warning: "#f59e0b",
+  damaged: "#dc2626",
+  blocked: "#dc2626",
+};
+
 /** Builds the DOM element for a MapLibre marker — layered glow / pulse / core. */
 function buildMarkerEl(opts: {
   color: string;
   animated: boolean;
   isSensor: boolean;
-  iconKind: "alert" | "check" | "sensor" | "pin";
+  iconKind: IconKind;
   extraClass?: string;
 }): HTMLDivElement {
   const el = document.createElement("div");
@@ -206,6 +289,8 @@ export default function LiveMap({
   events = [],
   selectedEventId = null,
   onEventSelect,
+  incidents: incidentsProp,
+  onIncidentSelect,
 }: LiveMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
@@ -259,6 +344,7 @@ export default function LiveMap({
       name: p.name,
       kind: p.kind,
       lngLat: p.center,
+      status: p.status,
     }));
 
     const eventEntries = events
@@ -304,8 +390,12 @@ export default function LiveMap({
       bearing: 0,
       maxPitch: 85,
 
+      // OSM raster tiles require attribution — kept compact so it stays out of
+      // the way of the map UI.
       attributionControl: false,
     });
+
+    map.addControl(new AttributionControl({ compact: true }), "bottom-right");
 
     mapRef.current = map;
 
@@ -328,12 +418,17 @@ export default function LiveMap({
     // NAVIGATION
     // ------------------------------------------------------------
 
+    // Top-right, not bottom-right: CommandMap's recenter/fullscreen buttons
+    // are also anchored to the top-right corner (fixed offset below this
+    // control) so the two clusters can never collide regardless of map
+    // height — a vertically-centered vs. bottom-anchored pairing did, on a
+    // short map, converge and overlap.
     map.addControl(
       new NavigationControl({
         showCompass: true,
         visualizePitch: true,
       }),
-      "bottom-right",
+      "top-right",
     );
 
     // Enable 3D rotation.
@@ -351,8 +446,17 @@ export default function LiveMap({
       return (granular === undefined ? true : granular) && (legacy === undefined ? true : legacy);
     }
 
-    function sensorVisible(): boolean {
-      const granular = layersRef.current["sensors"];
+    // Infrastructure kind → its own granular layer-toggle id (Transport>Bridges,
+    // Infrastructure>Hospitals/Relief Shelters — see data/layers.ts).
+    const INFRA_LAYER_ID: Record<string, string> = {
+      hospital: "hospitals",
+      bridge: "bridges",
+      depot: "shelters",
+    };
+
+    function infraVisible(infraKind: string | undefined): boolean {
+      const layerId = infraKind ? INFRA_LAYER_ID[infraKind] : undefined;
+      const granular = layerId ? layersRef.current[layerId] : undefined;
       const legacy = layersRef.current["infrastructure"];
       return (granular === undefined ? true : granular) && (legacy === undefined ? true : legacy);
     }
@@ -363,15 +467,23 @@ export default function LiveMap({
       lngLat: [number, number],
       title: string,
       severity: Severity | null,
+      infraKind?: string,
+      status?: string,
     ) {
-      const color = severity ? SEVERITY[severity].hex : "#22c55e";
-      const animated = severity === "critical" || severity === "high";
       const isSensor = kind === "sensor";
+      const infraStyle = infraKind ? INFRA_STYLE[infraKind] : undefined;
+      const statusColor = infraKind === "bridge" && status ? BRIDGE_STATUS_COLOR[status] : undefined;
+      const color = severity ? SEVERITY[severity].hex : (statusColor ?? infraStyle?.color ?? "#22c55e");
+      const animated =
+        severity === "critical" ||
+        severity === "high" ||
+        status === "damaged" ||
+        status === "blocked";
       const el = buildMarkerEl({
         color,
         animated,
         isSensor,
-        iconKind: isSensor ? "sensor" : severityIconKind(severity ?? "low"),
+        iconKind: infraStyle?.icon ?? (isSensor ? "sensor" : severityIconKind(severity ?? "low")),
       });
 
       el.addEventListener("click", (ev) => {
@@ -389,7 +501,7 @@ export default function LiveMap({
         .setLngLat(lngLat)
         .addTo(map);
 
-      markers.set(key, { id: key, kind, severity, title, marker, lngLat });
+      markers.set(key, { id: key, kind, severity, title, marker, lngLat, infraKind });
     }
 
     // ------------------------------------------------------------
@@ -398,7 +510,8 @@ export default function LiveMap({
 
     map.on("load", () => {
       // ----------------------------------------------------------
-      // TERRAIN (subtle relief, muted to match the dark base)
+      // TERRAIN (low-contrast relief — mountains stay legible under the
+      // risk/intelligence layers without competing with them)
       // ----------------------------------------------------------
 
       map.addSource("terrainSource", {
@@ -411,15 +524,19 @@ export default function LiveMap({
         map.setTerrain({ source: "terrainSource", exaggeration: TERRAIN_EXAGGERATION });
       }
 
+      // Esri's own basemap already bakes in hillshade/contour texture — this
+      // layer only adds a light crispness boost, kept subtle to avoid
+      // double-shading the terrain into a muddy look.
       map.addLayer({
         id: "hillshade",
         type: "hillshade",
         source: "terrainSource",
         paint: {
-          "hillshade-shadow-color": "#04120a",
-          "hillshade-highlight-color": "#1a2f22",
-          "hillshade-accent-color": "#0e1a13",
-          "hillshade-exaggeration": 0.35,
+          "hillshade-shadow-color": "#8a9285",
+          "hillshade-highlight-color": "#fbfcfa",
+          "hillshade-accent-color": "#c9d2c3",
+          "hillshade-exaggeration": 0.12,
+          "hillshade-illumination-anchor": "map",
         },
       });
 
@@ -492,32 +609,92 @@ export default function LiveMap({
       });
 
       // ----------------------------------------------------------
-      // RIVERS
+      // RIVERS — clear medium blue, thicker for major waterways
       // ----------------------------------------------------------
+
+      // A light casing under the river line keeps it reading as unmistakably
+      // "water" against forest/terrain green-brown, the same treatment used
+      // for road hierarchy below.
+      map.addLayer({
+        id: "rivers-casing",
+        type: "line",
+        source: "rivers",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#e0f2fe",
+          "line-width": 6,
+          "line-opacity": 0.55,
+        },
+      });
 
       map.addLayer({
         id: "rivers",
         type: "line",
         source: "rivers",
+        layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": "#84cc16",
-          "line-width": 2.5,
-          "line-opacity": 0.5,
+          "line-color": "#1d4ed8",
+          "line-width": 4,
+          "line-opacity": 0.95,
         },
       });
 
       // ----------------------------------------------------------
-      // ROADS
+      // ROADS — dark-gray primary highways with a light casing so they read
+      // clearly over terrain and stay visible through risk-zone tinting;
+      // secondary/district roads render thinner and lighter.
       // ----------------------------------------------------------
+
+      map.addLayer({
+        id: "roads-casing",
+        type: "line",
+        source: "roads",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#ffffff",
+          "line-width": ["case", ["==", ["get", "cls"], "national"], 6, 3.6],
+          "line-opacity": 0.9,
+        },
+      });
 
       map.addLayer({
         id: "roads",
         type: "line",
         source: "roads",
+        layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": "#5f7188",
-          "line-width": ["case", ["==", ["get", "cls"], "national"], 3, 1.6],
-          "line-opacity": 0.65,
+          // A road's own status (warning/blocked) overrides the plain
+          // highway/local hierarchy color — real field condition, not decoration.
+          "line-color": [
+            "match",
+            ["get", "status"],
+            "blocked",
+            "#dc2626",
+            "warning",
+            "#f59e0b",
+            ["case", ["==", ["get", "cls"], "national"], "#3f4a56", "#6b7280"],
+          ],
+          "line-width": ["case", ["==", ["get", "cls"], "national"], 3.2, 1.8],
+          "line-opacity": 0.9,
+        },
+      });
+
+      // ----------------------------------------------------------
+      // EMERGENCY / EVACUATION ROUTES — the subset of the same road geometry
+      // flagged as an evacuation corridor (never a separately drawn route).
+      // ----------------------------------------------------------
+
+      map.addLayer({
+        id: "evacuation-routes",
+        type: "line",
+        source: "roads",
+        filter: ["==", ["get", "evacuationRoute"], true],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#0ea5e9",
+          "line-width": 4,
+          "line-opacity": 0.9,
+          "line-dasharray": [0.1, 1.6],
         },
       });
 
@@ -525,13 +702,43 @@ export default function LiveMap({
       // RISK ZONES — soft glow fill + crisp outline
       // ----------------------------------------------------------
 
+      // Per-band base opacity/width — kept low so terrain, roads and rivers
+      // stay legible underneath (spec: transparency + clean borders, never a
+      // saturated opaque fill).
+      const RISK_BASE_OPACITY = [
+        "match",
+        ["get", "band"],
+        "critical",
+        0.24,
+        "high",
+        0.2,
+        "moderate",
+        0.17,
+        "low",
+        0.14,
+        0.16,
+      ] as unknown as number;
+      const RISK_LINE_WIDTH = [
+        "match",
+        ["get", "band"],
+        "critical",
+        2.6,
+        "high",
+        2,
+        "moderate",
+        2,
+        "low",
+        1.6,
+        1.6,
+      ] as unknown as number;
+
       map.addLayer({
         id: "risk-zones-glow",
         type: "fill",
         source: "risk-zones",
         paint: {
           "fill-color": ["coalesce", ["get", "color"], "#dc2626"],
-          "fill-opacity": 0.1,
+          "fill-opacity": 0.06,
         },
       });
 
@@ -544,8 +751,8 @@ export default function LiveMap({
           "fill-opacity": [
             "case",
             ["boolean", ["feature-state", "hover"], false],
-            0.28,
-            0.14,
+            0.32,
+            RISK_BASE_OPACITY,
           ],
         },
       });
@@ -556,8 +763,8 @@ export default function LiveMap({
         source: "risk-zones",
         paint: {
           "line-color": ["coalesce", ["get", "color"], "#dc2626"],
-          "line-width": 1.5,
-          "line-opacity": 0.8,
+          "line-width": RISK_LINE_WIDTH,
+          "line-opacity": 0.95,
         },
       });
 
@@ -566,7 +773,7 @@ export default function LiveMap({
         type: "line",
         source: "risk-zones",
         paint: {
-          "line-color": "#ffffff",
+          "line-color": "#1e293b",
           "line-width": 2.5,
           "line-opacity": 0.9,
         },
@@ -574,7 +781,7 @@ export default function LiveMap({
       });
 
       // ----------------------------------------------------------
-      // VILLAGES / SCHOOLS (unchanged, decorative context points)
+      // VILLAGES / SCHOOLS (unchanged data, restyled for the light basemap)
       // ----------------------------------------------------------
 
       map.addLayer({
@@ -585,8 +792,8 @@ export default function LiveMap({
         minzoom: 8,
         paint: {
           "circle-radius": 3.5,
-          "circle-color": "#94a3b8",
-          "circle-stroke-color": "#08100d",
+          "circle-color": "#64748b",
+          "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 1.5,
         },
       });
@@ -598,8 +805,8 @@ export default function LiveMap({
         minzoom: 8,
         paint: {
           "circle-radius": 3.5,
-          "circle-color": "#a78bfa",
-          "circle-stroke-color": "#08100d",
+          "circle-color": "#7c3aed",
+          "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 1.5,
         },
       });
@@ -623,9 +830,9 @@ export default function LiveMap({
         source: "incident-clusters",
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#f97316",
-          "circle-opacity": 0.85,
-          "circle-stroke-color": "#08100d",
+          "circle-color": "#FB8C00",
+          "circle-opacity": 0.9,
+          "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 2,
           "circle-radius": [
             "step",
@@ -661,22 +868,23 @@ export default function LiveMap({
         filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-radius": 6,
-          "circle-color": ["coalesce", ["get", "color"], "#f59e0b"],
-          "circle-stroke-color": "#08100d",
+          "circle-color": ["coalesce", ["get", "color"], "#F4B400"],
+          "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 1.5,
         },
       });
 
       // ----------------------------------------------------------
-      // GEOGRAPHIC LABELS toggle — muted cyan-gray for symbol layers
+      // GEOGRAPHIC LABELS toggle — dark charcoal with a soft light halo so
+      // place names stay readable over terrain and risk-zone tinting.
       // ----------------------------------------------------------
 
       for (const layer of map.getStyle().layers) {
         if (layer.type === "symbol") {
           try {
-            map.setPaintProperty(layer.id, "text-color", "#7d93ad");
-            map.setPaintProperty(layer.id, "text-halo-color", "#08100d");
-            map.setPaintProperty(layer.id, "text-halo-width", 1.2);
+            map.setPaintProperty(layer.id, "text-color", "#334155");
+            map.setPaintProperty(layer.id, "text-halo-color", "rgba(255,255,255,0.85)");
+            map.setPaintProperty(layer.id, "text-halo-width", 1.4);
           } catch {
             // Some symbol layers (icons only) have no text paint props — ignore.
           }
@@ -691,7 +899,7 @@ export default function LiveMap({
         addMarker(`incident:${inc.id}`, "incident", inc.lngLat, inc.name, inc.severity);
       }
       for (const s of sensorEntries) {
-        addMarker(`sensor:${s.id}`, "sensor", s.lngLat, s.name, null);
+        addMarker(`sensor:${s.id}`, "sensor", s.lngLat, s.name, null, s.kind, s.status);
       }
       for (const ev of eventEntries) {
         addMarker(`event:${ev.id}`, "event", ev.lngLat, ev.name, ev.severity);
@@ -888,7 +1096,7 @@ export default function LiveMap({
       for (const rec of markers.values()) {
         const visible =
           rec.kind === "sensor"
-            ? sensorVisible()
+            ? infraVisible(rec.infraKind)
             : rec.severity
               ? severityVisible(rec.severity)
               : true;
@@ -932,6 +1140,45 @@ export default function LiveMap({
     // Map intentionally initializes once; `events`/`layers` are applied via refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // --------------------------------------------------------------
+  // LIVE INCIDENTS — adds a marker for any incident not already rendered by
+  // the seed INCIDENT_POINTS pass above (same "incident:<id>" key, so seed
+  // incidents never double-render; only genuinely new ones — e.g. from the
+  // Report Incident form — get added here as they're created).
+  // --------------------------------------------------------------
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current || !incidentsProp) return;
+    const markers = markersRef.current;
+
+    for (const inc of incidentsProp) {
+      const key = `incident:${inc.id}`;
+      if (!inc.lngLat || markers.has(key)) continue;
+
+      const color = SEVERITY[inc.severity].hex;
+      const animated = inc.severity === "critical" || inc.severity === "high";
+      const el = buildMarkerEl({
+        color,
+        animated,
+        isSensor: false,
+        iconKind: severityIconKind(inc.severity),
+      });
+
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const point = map.project(inc.lngLat as LngLatLike);
+        setPopup((prev) => (prev?.id === key ? null : { kind: "incident", id: key, x: point.x, y: point.y }));
+        onIncidentSelect?.(inc.id);
+      });
+
+      const marker = new MLMarker({ element: el, anchor: "center" }).setLngLat(inc.lngLat).addTo(map);
+      markers.set(key, { id: key, kind: "incident", severity: inc.severity, title: inc.title, marker, lngLat: inc.lngLat });
+    }
+
+    applyMarkerVisibilityRef.current();
+  }, [incidentsProp, onIncidentSelect]);
 
   // --------------------------------------------------------------
   // SELECTED ZONE
@@ -1016,14 +1263,44 @@ export default function LiveMap({
       return evt ? { kind: "event" as const, event: evt } : null;
     }
     if (popup.kind === "incident") {
+      const incId = popup.id.split(":")[1];
+      // Real incident data (title/location/category/summary/status) when the
+      // caller passes the live incidents prop; falls back to the minimal
+      // seed-only feature for the homepage preview, which has none.
+      const incident = incidentsProp?.find((i) => i.id === incId);
+      if (incident) {
+        return {
+          kind: "incident" as const,
+          incident: {
+            name: incident.title,
+            band: incident.severity,
+            location: incident.location,
+            category: incident.category,
+            summary: incident.summary,
+            status: incident.status,
+          },
+        };
+      }
       const feature = INCIDENT_POINTS.features.find(
-        (f) => (f.properties as { id: string }).id === popup.id.split(":")[1],
+        (f) => (f.properties as { id: string }).id === incId,
       );
-      return feature ? { kind: "incident" as const, feature } : null;
+      if (!feature) return null;
+      const p = feature.properties as { name: string; band: Severity };
+      return {
+        kind: "incident" as const,
+        incident: {
+          name: p.name,
+          band: p.band,
+          location: "Sikkim GIS Sector",
+          category: "Disaster Risk Incident",
+          summary: "Field-reported incident within an active risk zone.",
+          status: "new",
+        },
+      };
     }
     const s = [...HOSPITALS, ...BRIDGES, ...DEPOTS].find((p) => p.id === popup.id.split(":")[1]);
     return s ? { kind: "sensor" as const, sensor: s } : null;
-  }, [popup, events]);
+  }, [popup, events, incidentsProp]);
 
   return (
     <div className="relative h-full w-full">
@@ -1050,13 +1327,13 @@ export default function LiveMap({
 
       {hoverTooltip && !popup && (
         <div
-          className="glass-float pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-[calc(100%+10px)] whitespace-nowrap rounded-md px-2.5 py-1.5 text-[11px]"
+          className="map-card pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-[calc(100%+10px)] whitespace-nowrap rounded-md px-2.5 py-1.5 text-[11px]"
           style={{ left: hoverTooltip.x, top: hoverTooltip.y }}
         >
           <span className={cn("font-semibold", SEVERITY[hoverTooltip.band].text)}>
             {SEVERITY[hoverTooltip.band].label} Risk
           </span>
-          <span className="text-fg-muted"> · {hoverTooltip.name}</span>
+          <span className="text-slate-500"> · {hoverTooltip.name}</span>
         </div>
       )}
     </div>
@@ -1067,14 +1344,17 @@ export default function LiveMap({
 // LAYER VISIBILITY (GL style layers)
 // ================================================================
 
+const HAZARD_TYPES = ["landslide", "flood", "fire", "earthquake"];
+
 function applyLayerVisibility(map: MLMap, layers: Record<string, boolean>) {
   const groups: Record<string, string[]> = {
     "risk-zones": ["risk-zones-fill", "risk-zones-glow", "risk-zones-line", "risk-zones-highlight"],
     rainfall: ["rainfall"],
-    roads: ["roads"],
-    rivers: ["rivers"],
+    roads: ["roads", "roads-casing"],
+    rivers: ["rivers", "rivers-casing"],
     villages: ["villages"],
     schools: ["schools"],
+    "evacuation-routes": ["evacuation-routes"],
   };
 
   for (const [key, layerIds] of Object.entries(groups)) {
@@ -1083,6 +1363,20 @@ function applyLayerVisibility(map: MLMap, layers: Record<string, boolean>) {
       if (!map.getLayer(layerId)) continue;
       map.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
     }
+  }
+
+  // Independently-toggleable hazard categories, derived from each risk zone's
+  // own `hazard` field — never a duplicated/fabricated layer.
+  const activeHazards = HAZARD_TYPES.filter((h) => layers[`hazard-${h}`] !== false);
+  const hazardFilter =
+    activeHazards.length === HAZARD_TYPES.length
+      ? undefined
+      : (["in", ["get", "hazard"], ["literal", activeHazards]] as unknown as Parameters<
+          typeof map.setFilter
+        >[1]);
+  for (const layerId of ["risk-zones-fill", "risk-zones-glow", "risk-zones-line"]) {
+    if (!map.getLayer(layerId)) continue;
+    map.setFilter(layerId, hazardFilter);
   }
 }
 
@@ -1099,10 +1393,27 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
   Compliance: Gavel,
 };
 
+/** Infrastructure kind → popup glyph (mirrors the marker's own icon choice). */
+const INFRA_POPUP_ICON: Record<string, LucideIcon> = {
+  hospital: Hospital,
+  bridge: Route,
+  depot: Home,
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  normal: "Normal",
+  warning: "Warning",
+  damaged: "Damaged",
+  blocked: "Blocked",
+};
+
 type PopupData =
   | { kind: "event"; event: TimelineEvent }
-  | { kind: "incident"; feature: GeoJSON.Feature }
-  | { kind: "sensor"; sensor: { id: string; name: string; kind: string } };
+  | {
+      kind: "incident";
+      incident: { name: string; band: Severity; location: string; category: string; summary: string; status: string };
+    }
+  | { kind: "sensor"; sensor: { id: string; name: string; kind: string; status?: InfraStatus } };
 
 function MapPopup({
   x,
@@ -1138,24 +1449,32 @@ function MapPopup({
     status = e.status ?? "";
     Icon = CATEGORY_ICON[e.category] ?? ShieldAlert;
   } else if (data.kind === "incident") {
-    const p = data.feature.properties as { name: string; band: Severity };
-    title = p.name;
-    severity = p.band;
-    location = "Sikkim GIS Sector";
-    detail1 = { label: "Type", value: "Disaster Risk Incident" };
-    description = "Field-reported incident within an active risk zone.";
-    status = "Field Verification";
+    const inc = data.incident;
+    title = inc.name;
+    severity = inc.band;
+    location = inc.location;
+    detail1 = { label: "Category", value: inc.category };
+    description = inc.summary;
+    status = inc.status.charAt(0).toUpperCase() + inc.status.slice(1);
     Icon = TriangleAlert;
   } else {
-    title = data.sensor.name;
+    const sensor = data.sensor;
+    title = sensor.name;
     location = "Infrastructure Network";
-    detail1 = { label: "Type", value: data.sensor.kind };
-    description = "Monitored infrastructure asset.";
-    status = "Nominal";
-    Icon = RadioTower;
+    detail1 = { label: "Category", value: sensor.kind };
+    description =
+      sensor.kind === "bridge"
+        ? "River-crossing infrastructure — condition tracked against nearby hazard zones."
+        : sensor.kind === "hospital"
+          ? "Medical facility available for casualty response."
+          : "Relief / staging depot for emergency response.";
+    status = sensor.status ? STATUS_LABEL[sensor.status] : "Normal";
+    Icon = INFRA_POPUP_ICON[sensor.kind] ?? RadioTower;
   }
 
-  const accent = severity ? SEVERITY[severity].hex : "#22c55e";
+  const infraStatusAccent =
+    data.kind === "sensor" && data.sensor.status ? BRIDGE_STATUS_COLOR[data.sensor.status] : undefined;
+  const accent = severity ? SEVERITY[severity].hex : (infraStatusAccent ?? "#22c55e");
 
   return (
     <motion.div
@@ -1170,7 +1489,7 @@ function MapPopup({
         top: y,
         transform: `translate(${flipX ? "-100%" : "12px"}, ${flipY ? "12px" : "-100%"})`,
       }}
-      className="glass-float z-30 w-56 rounded-xl p-3"
+      className="map-card z-30 w-56 rounded-xl p-3"
     >
       <span
         className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl"
@@ -1191,19 +1510,19 @@ function MapPopup({
               {SEVERITY[severity].label} Risk
             </span>
           )}
-          <p className="truncate text-[12px] font-semibold text-fg">{title}</p>
+          <p className="truncate text-[12px] font-semibold text-slate-900">{title}</p>
         </div>
         <button
           onClick={onClose}
           aria-label="Close intelligence popup"
-          className="shrink-0 text-fg-dim hover:text-fg"
+          className="shrink-0 text-slate-400 hover:text-slate-800"
         >
           <X size={13} />
         </button>
       </div>
 
-      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-fg-muted">
-        <MapPin size={10} className="shrink-0 text-fg-dim" />
+      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+        <MapPin size={10} className="shrink-0 text-slate-400" />
         <span className="truncate">{location}</span>
       </div>
 
@@ -1211,27 +1530,27 @@ function MapPopup({
         <dl className="mt-1.5 space-y-1 text-[10px]">
           {detail1 && (
             <div className="flex justify-between gap-3">
-              <dt className="text-fg-dim">{detail1.label}</dt>
-              <dd className="truncate text-fg">{detail1.value}</dd>
+              <dt className="text-slate-400">{detail1.label}</dt>
+              <dd className="truncate text-slate-800">{detail1.value}</dd>
             </div>
           )}
           {detail2 && (
             <div className="flex justify-between gap-3">
-              <dt className="text-fg-dim">{detail2.label}</dt>
-              <dd className="numeric text-fg">{detail2.value}</dd>
+              <dt className="text-slate-400">{detail2.label}</dt>
+              <dd className="numeric text-slate-800">{detail2.value}</dd>
             </div>
           )}
         </dl>
       )}
 
       {description && (
-        <p className="mt-1.5 text-[10px] leading-relaxed text-fg-muted">{description}</p>
+        <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">{description}</p>
       )}
 
       {status && (
-        <div className="mt-1.5 flex items-center justify-between border-t border-white/8 pt-1.5">
-          <span className="text-[9px] uppercase tracking-wider text-fg-dim">Status</span>
-          <span className="text-[10px] font-medium text-fg">{status}</span>
+        <div className="mt-1.5 flex items-center justify-between border-t border-slate-900/8 pt-1.5">
+          <span className="text-[9px] uppercase tracking-wider text-slate-400">Status</span>
+          <span className="text-[10px] font-medium text-slate-800">{status}</span>
         </div>
       )}
     </motion.div>

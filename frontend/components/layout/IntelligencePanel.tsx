@@ -7,6 +7,7 @@ import { ImpactSummary } from "@/components/risk/ImpactSummary";
 import { RiskFactors } from "@/components/risk/RiskFactors";
 import { RiskScore } from "@/components/risk/RiskScore";
 import { RAINFALL_SUMMARY, SOIL_MOISTURE } from "@/data/weather";
+import { useCommand } from "@/lib/command-context";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -18,6 +19,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function IntelligencePanel({ onCollapse }: { onCollapse: () => void }) {
+  const { live, activeSimulation } = useCommand();
+  const rainfall24h = live.rainfall;
+  const rainfall72h = RAINFALL_SUMMARY.window72h + (activeSimulation?.rainfallDeltaMm ?? 0);
+  const soilMoisture = Math.min(
+    100,
+    SOIL_MOISTURE.value + (activeSimulation?.soilMoistureDeltaPct ?? 0),
+  );
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -56,7 +65,7 @@ export function IntelligencePanel({ onCollapse }: { onCollapse: () => void }) {
               <div className="flex items-center gap-2">
                 <CloudRain size={16} className="text-accent" />
                 <span className="numeric text-2xl font-semibold text-fg">
-                  {RAINFALL_SUMMARY.current}
+                  {rainfall24h}
                   <span className="ml-1 text-xs font-normal text-fg-muted">
                     {RAINFALL_SUMMARY.unit}
                   </span>
@@ -71,16 +80,21 @@ export function IntelligencePanel({ onCollapse }: { onCollapse: () => void }) {
               <div className="rounded-lg bg-white/[0.03] px-2.5 py-1.5">
                 <p className="eyebrow">24H</p>
                 <p className="numeric mt-0.5 text-sm font-semibold text-fg">
-                  {RAINFALL_SUMMARY.window24h} mm
+                  {rainfall24h} mm
                 </p>
               </div>
               <div className="rounded-lg bg-white/[0.03] px-2.5 py-1.5">
                 <p className="eyebrow">72H</p>
                 <p className="numeric mt-0.5 text-sm font-semibold text-fg">
-                  {RAINFALL_SUMMARY.window72h} mm
+                  {rainfall72h} mm
                 </p>
               </div>
             </div>
+            {activeSimulation && (
+              <p className="mt-2 text-[9px] font-bold uppercase tracking-wider text-accent">
+                Demo simulation · +{activeSimulation.rainfallDeltaMm}mm applied
+              </p>
+            )}
           </div>
         </section>
 
@@ -92,7 +106,7 @@ export function IntelligencePanel({ onCollapse }: { onCollapse: () => void }) {
               <div className="flex items-center gap-2">
                 <Droplets size={16} className="text-accent" />
                 <span className="numeric text-2xl font-semibold text-fg">
-                  {SOIL_MOISTURE.value}%
+                  {soilMoisture}%
                 </span>
               </div>
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sev-high">
@@ -104,7 +118,7 @@ export function IntelligencePanel({ onCollapse }: { onCollapse: () => void }) {
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-accent to-sev-high"
                 initial={{ width: 0 }}
-                animate={{ width: `${SOIL_MOISTURE.value}%` }}
+                animate={{ width: `${soilMoisture}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
               />
               {/* Threshold marker */}

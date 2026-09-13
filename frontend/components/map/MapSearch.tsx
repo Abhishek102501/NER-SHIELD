@@ -97,6 +97,10 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
 
     const requestId = ++requestIdRef.current;
     const controller = new AbortController();
+    // Standard debounced-fetch pattern: setLoading(true) at the start of the
+    // request is the "synchronize with an external system" case, not a
+    // render loop.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
 
@@ -193,13 +197,13 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
           type="button"
           onClick={() => setExpanded(true)}
           aria-label="Search for a location"
-          className="glass-float grid h-9 w-9 place-items-center rounded-lg text-fg-muted transition-colors hover:text-accent"
+          className="map-card grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition-colors hover:text-accent"
         >
           <Search size={15} />
         </button>
       ) : (
-        <div className="glass-float flex h-9 w-[min(78vw,20rem)] items-center gap-2 rounded-lg px-2.5 sm:w-72">
-          <Search size={14} className="shrink-0 text-fg-dim" />
+        <div className="map-card flex h-9 w-[min(78vw,20rem)] items-center gap-2 rounded-lg px-2.5 sm:w-72">
+          <Search size={14} className="shrink-0 text-slate-400" />
           <input
             ref={inputRef}
             value={query}
@@ -214,7 +218,7 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
             aria-expanded={showDropdown}
             aria-controls={listboxId}
             aria-autocomplete="list"
-            className="w-full min-w-0 bg-transparent text-[12px] text-fg placeholder:text-fg-dim focus:outline-none"
+            className="w-full min-w-0 bg-transparent text-[12px] text-slate-800 placeholder:text-slate-400 focus:outline-none"
           />
           {loading && <Loader2 size={13} className="shrink-0 animate-spin text-accent" />}
           {(query || selected) && !loading && (
@@ -222,7 +226,7 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
               type="button"
               onClick={clear}
               aria-label="Clear search"
-              className="shrink-0 text-fg-dim hover:text-fg"
+              className="shrink-0 text-slate-400 hover:text-slate-800"
             >
               <X size={14} />
             </button>
@@ -237,20 +241,20 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="glass-float absolute left-0 top-[calc(100%+8px)] z-30 max-h-72 w-[min(78vw,20rem)] overflow-y-auto rounded-xl p-1.5 sm:w-72"
+            className="map-card absolute left-0 top-[calc(100%+8px)] z-30 max-h-72 w-[min(78vw,20rem)] overflow-y-auto rounded-xl p-1.5 sm:w-72"
           >
             {error && !coordResult ? (
-              <div className="flex items-start gap-2 px-2.5 py-3 text-[11px] text-fg-muted">
+              <div className="flex items-start gap-2 px-2.5 py-3 text-[11px] text-slate-500">
                 <TriangleAlert size={14} className="mt-0.5 shrink-0 text-sev-high" />
                 <span>{error}</span>
               </div>
             ) : loading && displayResults.length === 0 ? (
-              <div className="flex items-center gap-2 px-2.5 py-3 text-[11px] text-fg-dim">
+              <div className="flex items-center gap-2 px-2.5 py-3 text-[11px] text-slate-400">
                 <Loader2 size={13} className="animate-spin" />
                 Searching…
               </div>
             ) : displayResults.length === 0 ? (
-              <div className="px-2.5 py-3 text-[11px] text-fg-dim">
+              <div className="px-2.5 py-3 text-[11px] text-slate-400">
                 No locations found for &ldquo;{query.trim()}&rdquo;.
               </div>
             ) : (
@@ -266,23 +270,23 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
                         onMouseEnter={() => setActiveIndex(i)}
                         className={cn(
                           "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
-                          active ? "bg-accent/10 text-fg" : "text-fg-muted hover:bg-white/5",
+                          active ? "bg-accent/10 text-slate-900" : "text-slate-500 hover:bg-slate-900/5",
                         )}
                       >
-                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white/5 text-accent">
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-900/5 text-accent">
                           <Icon size={13} />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[12px] font-medium text-fg">
+                          <span className="block truncate text-[12px] font-medium text-slate-900">
                             {r.label}
                           </span>
                           {r.subLabel && (
-                            <span className="block truncate text-[10px] text-fg-dim">
+                            <span className="block truncate text-[10px] text-slate-400">
                               {r.subLabel}
                             </span>
                           )}
                         </span>
-                        <span className="eyebrow shrink-0 text-[8.5px] text-fg-dim">
+                        <span className="map-eyebrow shrink-0 text-[8.5px]">
                           {CATEGORY_LABEL[r.category]}
                         </span>
                       </button>
@@ -301,7 +305,7 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            className="glass-float absolute left-0 top-[calc(100%+8px)] z-30 w-[min(78vw,20rem)] rounded-xl p-3 sm:w-72"
+            className="map-card absolute left-0 top-[calc(100%+8px)] z-30 w-[min(78vw,20rem)] rounded-xl p-3 sm:w-72"
           >
             <div className="flex items-start gap-2.5">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent">
@@ -311,12 +315,12 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
                 })()}
               </span>
               <div className="min-w-0 flex-1">
-                <span className="eyebrow text-accent/70">{CATEGORY_LABEL[selected.category]}</span>
-                <p className="truncate text-[13px] font-semibold text-fg">{selected.label}</p>
+                <span className="map-eyebrow text-accent/70">{CATEGORY_LABEL[selected.category]}</span>
+                <p className="truncate text-[13px] font-semibold text-slate-900">{selected.label}</p>
                 {selected.subLabel && (
-                  <p className="truncate text-[10px] text-fg-dim">{selected.subLabel}</p>
+                  <p className="truncate text-[10px] text-slate-400">{selected.subLabel}</p>
                 )}
-                <p className="numeric mt-1 text-[10px] text-fg-muted">
+                <p className="numeric mt-1 text-[10px] text-slate-500">
                   {selected.lat.toFixed(4)}, {selected.lon.toFixed(4)}
                 </p>
               </div>
@@ -324,7 +328,7 @@ export function MapSearch({ onSelect, onClear }: MapSearchProps) {
                 type="button"
                 onClick={clear}
                 aria-label="Clear selected location"
-                className="shrink-0 text-fg-dim hover:text-fg"
+                className="shrink-0 text-slate-400 hover:text-slate-800"
               >
                 <X size={14} />
               </button>

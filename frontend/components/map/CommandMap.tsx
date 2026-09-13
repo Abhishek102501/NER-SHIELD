@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Crosshair, Loader2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Crosshair, Loader2, Maximize, Minimize } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LayerControl } from "@/components/map/LayerControl";
 import { MapSearch } from "@/components/map/MapSearch";
 import { PrimaryActions } from "@/components/map/PrimaryActions";
@@ -15,7 +15,7 @@ import type { RiskZone } from "@/types";
 const LiveMap = dynamic(() => import("@/components/map/LiveMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-[#0a1610] text-fg-dim">
+    <div className="flex h-full w-full items-center justify-center bg-[#eef1ec] text-slate-400">
       <Loader2 size={20} className="animate-spin" />
     </div>
   ),
@@ -26,33 +26,64 @@ const MAP_EVENTS = mappableTimelineEvents(TIMELINE_EVENTS);
 
 /** The GIS map inside the command center — real MapLibre, wired to the layer control. */
 export function CommandMap() {
-  const { layers, selectedEventId, selectEvent } = useCommand();
+  const { layers, selectedEventId, selectEvent, incidents, selectedIncidentId, selectIncident } = useCommand();
   const [zone, setZone] = useState<RiskZone | null>(null);
   const apiRef = useRef<LiveMapApi | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Selecting an incident in the sidebar (or a future incident-search result)
+  // flies the map to it — previously incidents had no map-sync at all.
+  useEffect(() => {
+    if (!selectedIncidentId) return;
+    const incident = incidents.find((i) => i.id === selectedIncidentId);
+    if (incident?.lngLat) {
+      apiRef.current?.flyTo(incident.lngLat, 12);
+    }
+  }, [selectedIncidentId, incidents]);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(document.fullscreenElement === wrapperRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      wrapperRef.current?.requestFullscreen();
+    }
+  }
 
   // Command Center layer toggles map straight onto LiveMap's layer keys — see
   // data/layers.ts for the catalogue and LiveMap.tsx for what each one drives.
   const liveLayers = useMemo(
     () => ({
       "risk-zones": layers["risk-zones"] !== false,
+      "hazard-landslide": layers["hazard-landslide"] !== false,
+      "hazard-flood": layers["hazard-flood"] !== false,
       rainfall: true,
       roads: layers["roads"] !== false,
+      "evacuation-routes": layers["evacuation-routes"] !== false,
+      bridges: layers["bridges"] !== false,
       rivers: layers["rivers"] !== false,
       villages: layers["villages"] !== false,
-      schools: layers["villages"] !== false,
+      schools: layers["schools"] !== false,
       "terrain-3d": layers["terrain-3d"] !== false,
       labels: layers["labels"] !== false,
       "critical-incidents": layers["critical-incidents"] !== false,
       "high-incidents": layers["high-incidents"] !== false,
       "moderate-incidents": layers["moderate-incidents"] !== false,
       "low-incidents": layers["low-incidents"] !== false,
-      sensors: layers["sensors"] !== false,
+      hospitals: layers["hospitals"] !== false,
+      shelters: layers["shelters"] !== false,
     }),
     [layers],
   );
 
   return (
-    <div className="absolute inset-0">
+    <div ref={wrapperRef} className="absolute inset-0">
       <LiveMap
         className="h-full w-full"
         layers={liveLayers}
@@ -61,20 +92,35 @@ export function CommandMap() {
         events={MAP_EVENTS}
         selectedEventId={selectedEventId}
         onEventSelect={selectEvent}
+        incidents={incidents}
+        onIncidentSelect={selectIncident}
         onReady={(api) => {
           apiRef.current = api;
         }}
       />
 
-      {/* Recenter control */}
-      <button
-        onClick={() => apiRef.current?.reset()}
-        aria-label="Recenter map"
-        title="Recenter on region"
-        className="glass-float absolute right-3 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-fg-muted transition-colors hover:text-accent"
-      >
-        <Crosshair size={16} />
-      </button>
+      {/* Recenter + fullscreen controls — anchored a fixed distance below the
+          MapLibre zoom/compass control (also top-right, see LiveMap.tsx) so
+          the two clusters keep a constant gap instead of drifting into each
+          other as the map's height changes. */}
+      <div className="absolute right-3 top-[112px] z-10 flex flex-col gap-2">
+        <button
+          onClick={() => apiRef.current?.reset()}
+          aria-label="Recenter map"
+          title="Recenter on region"
+          className="map-card grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition-colors hover:text-accent"
+        >
+          <Crosshair size={16} />
+        </button>
+        <button
+          onClick={toggleFullscreen}
+          aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+          title={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+          className="map-card grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition-colors hover:text-accent"
+        >
+          {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+        </button>
+      </div>
 
       {/* Top-left control cluster — search, primary actions, layers. Wraps so it
           never overflows a narrow viewport. */}

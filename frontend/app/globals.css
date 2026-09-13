@@ -354,33 +354,73 @@ body {
 }
 
 /* ============================================================
-   COMMAND MAP — intelligence markers (MapLibre DOM markers)
+   COMMAND MAP — light professional GIS theme (basemap, controls,
+   intelligence markers). Scoped to the map canvas + its floating
+   UI only — the rest of the dashboard chrome stays on the dark
+   NER-SHIELD theme.
    ============================================================ */
 
-/* Muted, dark base for the MapLibre canvas itself before tiles paint in. */
+/* Light gray/off-white base for the MapLibre canvas before tiles paint in. */
 .ns-command-map .maplibregl-canvas {
-  background: #08100d;
+  background: #eef1ec;
 }
 .ns-command-map .maplibregl-ctrl-attrib {
-  background: rgba(8, 14, 10, 0.55);
+  background: rgba(255, 255, 255, 0.72);
 }
 .ns-command-map .maplibregl-ctrl-attrib a {
-  color: #9ca3af;
+  color: #64748b;
+}
+
+/* Zoom / compass controls — white card, soft shadow, rounded corners. */
+.ns-command-map .maplibregl-ctrl-group {
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 22px -10px rgba(15, 23, 42, 0.3);
+}
+.ns-command-map .maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+.ns-command-map .maplibregl-ctrl-group button:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+/* Floating light "map card" — legend, layer panel, search, popups. Replaces
+   the dashboard's dark .glass/.glass-float for the map screen only. */
+@utility map-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 26px -12px rgba(15, 23, 42, 0.28), 0 1px 0 0 rgba(255, 255, 255, 0.6) inset;
+  color: #1e293b;
+}
+
+/* Muted eyebrow label tuned for the light map cards (the dashboard-wide
+   .eyebrow utility is tuned for dark surfaces and stays untouched). */
+@utility map-eyebrow {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
 }
 
 .ns-intel-marker {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   cursor: pointer;
   color: var(--marker-color);
 }
 .ns-intel-marker-glow {
   position: absolute;
-  inset: -11px;
+  inset: -9px;
   border-radius: 9999px;
-  background: radial-gradient(circle, var(--marker-color) 0%, transparent 70%);
-  opacity: 0.35;
+  background: radial-gradient(circle, var(--marker-color) 0%, transparent 72%);
+  opacity: 0.22;
   filter: blur(1px);
   transition: opacity 0.2s ease;
 }
@@ -395,27 +435,28 @@ body {
   display: grid;
   place-items: center;
   border-radius: 9999px;
-  background: var(--marker-color);
-  border: 2px solid #08100d;
-  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--marker-color) 70%, transparent);
+  background: #ffffff;
+  border: 2.5px solid var(--marker-color);
+  box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.4);
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .ns-intel-marker-core svg {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
+  color: var(--marker-color);
 }
 .ns-intel-marker:hover .ns-intel-marker-core {
   transform: scale(1.12);
 }
 .ns-intel-marker.is-active .ns-intel-marker-core {
   transform: scale(1.28);
-  box-shadow: 0 0 16px 3px color-mix(in srgb, var(--marker-color) 85%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--marker-color) 25%, transparent);
 }
 .ns-intel-marker.is-active .ns-intel-marker-glow {
-  opacity: 0.6;
+  opacity: 0.4;
 }
 .ns-intel-marker.is-sensor .ns-intel-marker-core {
-  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--marker-color) 55%, transparent);
+  box-shadow: 0 1px 4px -1px rgba(15, 23, 42, 0.35);
 }
 
 /* ---------- Range slider (simulation controls) ---------- */

@@ -24,9 +24,12 @@ export const SCHOOLS: InfraPoint[] = [
   { id: "s-rhenock", name: "Rhenock Academy", kind: "school", center: [88.676, 27.186] },
 ];
 
+// Status reflects each bridge's real proximity to an active hazard zone (see
+// RISK_ZONES in data/geo.ts) — never an invented incident. Teesta Bridge sits
+// inside the Teesta Basin flood-watch zone; Rangpo Rail Bridge does not.
 export const BRIDGES: InfraPoint[] = [
-  { id: "b-teesta", name: "Teesta Bridge", kind: "bridge", center: [88.54, 27.1] },
-  { id: "b-rangpo", name: "Rangpo Rail Bridge", kind: "bridge", center: [88.527, 27.176] },
+  { id: "b-teesta", name: "Teesta Bridge", kind: "bridge", center: [88.54, 27.1], status: "warning" },
+  { id: "b-rangpo", name: "Rangpo Rail Bridge", kind: "bridge", center: [88.527, 27.176], status: "normal" },
 ];
 
 export const DEPOTS: InfraPoint[] = [

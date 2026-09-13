@@ -14,10 +14,10 @@ import {
 type FC = GeoJSON.FeatureCollection;
 
 const SEVERITY_TINT: Record<Severity, string> = {
-  low: "#22c55e",
-  moderate: "#eab308",
-  high: "#f97316",
-  critical: "#ef4444",
+  low: "#22C55E",
+  moderate: "#F4B400",
+  high: "#FB8C00",
+  critical: "#E53935",
 };
 export const GEO_SEVERITY_TINT = SEVERITY_TINT;
 
@@ -56,6 +56,7 @@ export const RISK_ZONES: FC = {
         population: 12800,
         roadsAtRisk: 7,
         recommendedAction: "Immediate closure review & field verification",
+        hazard: "landslide",
         color: SEVERITY_TINT.critical,
       },
       geometry: {
@@ -74,6 +75,7 @@ export const RISK_ZONES: FC = {
         population: 8300,
         roadsAtRisk: 4,
         recommendedAction: "Heighten monitoring; stage response teams",
+        hazard: "landslide",
         color: SEVERITY_TINT.high,
       },
       geometry: {
@@ -92,6 +94,7 @@ export const RISK_ZONES: FC = {
         population: 9600,
         roadsAtRisk: 4,
         recommendedAction: "Flood watch; advise low-lying settlements",
+        hazard: "flood",
         color: SEVERITY_TINT.high,
       },
       geometry: {
@@ -110,6 +113,7 @@ export const RISK_ZONES: FC = {
         population: 3400,
         roadsAtRisk: 2,
         recommendedAction: "Routine patrol; clear minor debris",
+        hazard: "landslide",
         color: SEVERITY_TINT.moderate,
       },
       geometry: {
@@ -128,6 +132,7 @@ export const RISK_ZONES: FC = {
         population: 1900,
         roadsAtRisk: 1,
         recommendedAction: "Nominal; continue sensor calibration",
+        hazard: "landslide",
         color: SEVERITY_TINT.low,
       },
       geometry: {
@@ -143,7 +148,16 @@ export const ROADS: FC = {
   features: [
     {
       type: "Feature",
-      properties: { name: "NH-10", cls: "national" },
+      properties: {
+        name: "NH-10",
+        cls: "national",
+        // "warning" mirrors the NH-10 Corridor risk zone's own recommended
+        // action ("Immediate closure review") — not an invented incident.
+        status: "warning",
+        // The only National Highway through the valley — the de facto primary
+        // evacuation corridor, not a separately drawn/fabricated route.
+        evacuationRoute: true,
+      },
       geometry: {
         type: "LineString",
         coordinates: [
@@ -157,7 +171,12 @@ export const ROADS: FC = {
     },
     {
       type: "Feature",
-      properties: { name: "Hill Road 04", cls: "district" },
+      properties: {
+        name: "Hill Road 04",
+        cls: "district",
+        status: "open",
+        evacuationRoute: false,
+      },
       geometry: {
         type: "LineString",
         coordinates: [

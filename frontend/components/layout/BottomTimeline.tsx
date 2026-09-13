@@ -34,31 +34,40 @@ export function BottomTimeline() {
   );
 
   return (
-    <div className="flex h-full flex-col px-4 py-2">
-      {/* Header */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+    <div className="flex h-full flex-col gap-1 px-4 py-2">
+      {/* Single header row — title, severity legend, observed/forecast key,
+          current-risk status, and the time-range control. Never wraps: a
+          wrap here previously ate a full extra row of height, which is what
+          compressed the chart into colliding with its own labels. Below the
+          2xl breakpoint the decorative legend items just don't render,
+          rather than risk a wrap at some untested intermediate width. */}
+      <div className="flex shrink-0 flex-nowrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <Activity size={15} className="text-accent" />
-            <h2 className="text-[13px] font-bold tracking-wide text-fg">
+            <h2 className="text-[16px] font-bold tracking-wide text-fg">
               Risk Timeline
             </h2>
           </div>
-          <span className="hidden items-center gap-3 lg:flex">
+          {/* Decorative — the chart's own colors already carry this meaning. */}
+          <span className="hidden shrink-0 items-center gap-3 2xl:flex">
             <LegendSwatch color={SEVERITY.critical.hex} label="Critical" />
             <LegendSwatch color={SEVERITY.high.hex} label="High" />
             <LegendSwatch color={SEVERITY.moderate.hex} label="Medium" />
             <LegendSwatch color={SEVERITY.low.hex} label="Low" />
+          </span>
+          <span className="hidden shrink-0 items-center gap-3 2xl:flex">
             <LegendLine swatch="solid" label="Observed" />
             <LegendLine swatch="dashed" label="Forecast" />
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Selected readout */}
-          <div className="hidden items-center gap-2 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-1 md:flex">
-            <span className="eyebrow">{selected?.label}</span>
-            <span className="numeric text-sm font-semibold text-fg">
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.02] px-2 py-0.5">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-fg-dim">
+              {selected?.label}
+            </span>
+            <span className="numeric text-[15px] font-bold leading-none text-fg">
               {selected?.risk}%
             </span>
             <span
@@ -71,7 +80,6 @@ export function BottomTimeline() {
             </span>
           </div>
 
-          {/* Time range controls */}
           <div className="flex items-center gap-0.5 rounded-lg border border-white/8 bg-white/[0.02] p-0.5">
             {TIME_RANGES.map((r) => (
               <button
@@ -83,7 +91,7 @@ export function BottomTimeline() {
                   );
                 }}
                 className={cn(
-                  "numeric rounded-md px-2 py-1 text-[10px] font-semibold transition-all duration-200",
+                  "numeric rounded-md px-2 py-0.75 text-[10px] font-semibold transition-all duration-200",
                   r.id === rangeId
                     ? "bg-accent/15 text-accent shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_0_10px_rgba(34,197,94,0.25)]"
                     : "text-fg-dim hover:bg-white/5 hover:text-fg-muted",
@@ -96,13 +104,13 @@ export function BottomTimeline() {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="mt-1 min-h-0 flex-1">
+      {/* Chart — the main visual element */}
+      <div className="min-h-0 flex-1 overflow-hidden">
         <RiskTimeline rangeHours={range.hours} />
       </div>
 
-      {/* Summary strip */}
-      <div className="mt-1.5 grid shrink-0 grid-cols-2 gap-1.5 sm:grid-cols-4">
+      {/* Footer — one strip, divided by hairlines, not four boxed cards */}
+      <div className="flex shrink-0 items-stretch divide-x divide-white/8 rounded-lg border border-white/8 bg-white/[0.02]">
         <SummaryStat
           icon={ShieldQuestion}
           label="Total Events"
@@ -176,14 +184,14 @@ function SummaryStat({
   colorClass: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.02] px-2.5 py-1.5">
-      <div className={cn("grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white/5", colorClass)}>
-        <Icon size={12} />
+    <div className="flex flex-1 items-center gap-2 px-3 py-1">
+      <div className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-md bg-white/5", colorClass)}>
+        <Icon size={11} />
       </div>
       <div className="min-w-0 leading-tight">
         <p className="truncate text-[9px] uppercase tracking-wider text-fg-dim">{label}</p>
         <div className="flex items-baseline gap-1.5">
-          <span className="numeric text-[13px] font-bold text-fg">{value}</span>
+          <span className="numeric text-[20px] font-bold leading-none text-fg">{value}</span>
           {change != null && change !== 0 && (
             <span
               className={cn(

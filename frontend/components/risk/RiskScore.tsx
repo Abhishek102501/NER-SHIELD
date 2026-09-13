@@ -4,13 +4,27 @@ import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { RISK_SCORE } from "@/data/risk";
+import { bandForRisk } from "@/data/simulation";
+import { useCommand } from "@/lib/command-context";
 import { SEVERITY, cn } from "@/lib/utils";
 
 const R = 52;
 const CIRC = 2 * Math.PI * R;
 
 export function RiskScore() {
-  const s = RISK_SCORE;
+  const { activeSimulation } = useCommand();
+  // A running DEMO SIMULATION overrides the baseline score — same value the
+  // Simulation modal previews, so the two never disagree.
+  const s = activeSimulation
+    ? {
+        ...RISK_SCORE,
+        value: activeSimulation.projectedRisk,
+        band: bandForRisk(activeSimulation.projectedRisk),
+        bandLabel: bandForRisk(activeSimulation.projectedRisk).toUpperCase(),
+        deltaLabel: `${activeSimulation.delta >= 0 ? "+" : ""}${activeSimulation.delta}% · ${activeSimulation.scenarioLabel}`,
+        deltaDirection: activeSimulation.delta >= 0 ? ("up" as const) : ("down" as const),
+      }
+    : RISK_SCORE;
   const sev = SEVERITY[s.band];
   const Trend = s.deltaDirection === "up" ? TrendingUp : TrendingDown;
   const dash = CIRC * (1 - s.value / 100);
@@ -65,6 +79,11 @@ export function RiskScore() {
 
       {/* Meta */}
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+        {activeSimulation && (
+          <span className="w-fit rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
+            Demo Simulation
+          </span>
+        )}
         <div>
           <p className="eyebrow mb-1">6-Hour Trend</p>
           <span

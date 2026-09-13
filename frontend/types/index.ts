@@ -18,19 +18,43 @@ export interface SystemMetric {
   trend?: Trend;
 }
 
+export type IncidentStatus = "new" | "acknowledged" | "dispatched" | "resolved";
+
+export interface IncidentDispatch {
+  unitId: string;
+  unitLabel: string;
+  priority: string;
+  notes: string;
+  eta: string;
+  dispatchedBy: string;
+  dispatchedAt: string;
+}
+
 export interface Incident {
   id: string;
   severity: Severity;
   title: string;
   location: string;
-  /** Human-readable relative time, e.g. "12 min ago". */
+  /** Human-readable relative time, e.g. "12 min ago". Frozen at creation for
+   * seed data; live-created incidents compute this from `createdAt`. */
   timeAgo: string;
-  /** Abstract map position in 0–100 space (placeholder, not real geodata). */
+  /** Abstract map position in 0–100 space (placeholder, not real geodata) —
+   * used only by decorative mini-map treatments, never the real GIS map. */
   x: number;
   y: number;
   summary: string;
   category: string;
   reportedBy: string;
+  /** Real coordinates — present for every incident the GIS map can plot.
+   * Never fabricated: seed incidents reuse the same points as data/geo.ts;
+   * user-created incidents come from a picked, real, named location. */
+  lngLat?: [number, number];
+  status: IncidentStatus;
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+  dispatch?: IncidentDispatch;
+  /** ISO timestamp — absent on static seed data (which ships a frozen `timeAgo` instead). */
+  createdAt?: string;
 }
 
 export interface RiskFactor {
@@ -104,7 +128,13 @@ export interface TimeRangeOption {
   hours: number;
 }
 
-export type LayerGroupId = "base" | "intelligence" | "infrastructure";
+export type LayerGroupId =
+  | "natural"
+  | "transport"
+  | "settlements"
+  | "infrastructure"
+  | "risk"
+  | "response";
 
 export interface MapLayer {
   id: string;
@@ -119,6 +149,38 @@ export interface AppNotification {
   title: string;
   detail: string;
   timeAgo: string;
+  read: boolean;
+  createdAt: string;
+}
+
+/** One row of the demo audit/activity log — real actions taken this session. */
+export interface AuditEvent {
+  id: string;
+  time: string;
+  actor: string;
+  action: string;
+  detail: string;
+}
+
+/** Demo Duty Officer capability set — never ADMIN unless the app actually
+ * requires it. Gates UI affordances; every disabled control must show why. */
+export interface PermissionSet {
+  viewMap: boolean;
+  viewIncidents: boolean;
+  createIncident: boolean;
+  updateIncident: boolean;
+  dispatch: boolean;
+  acknowledgeAlert: boolean;
+  simulateScenario: boolean;
+  admin: boolean;
+}
+
+export interface DemoSession {
+  name: string;
+  role: string;
+  accountType: string;
+  organization: string;
+  loggedInAt: string;
 }
 
 /* ============================================================
@@ -185,6 +247,8 @@ export interface WhatIfResult {
   };
 }
 
+export type HazardType = "landslide" | "flood" | "fire" | "earthquake";
+
 /** GIS risk zone (mirrors a GeoJSON feature's properties). */
 export interface RiskZone {
   id: string;
@@ -195,6 +259,8 @@ export interface RiskZone {
   population: number;
   roadsAtRisk: number;
   recommendedAction: string;
+  /** Derived from the zone's own field narrative — never a fabricated new zone. */
+  hazard: HazardType;
 }
 
 export type ResponsePhase = "detect" | "assess" | "prioritize" | "respond";
@@ -263,11 +329,15 @@ export type InfraKind =
   | "bridge"
   | "depot";
 
+/** Operational condition — only meaningful for structures that can fail (bridges). */
+export type InfraStatus = "normal" | "warning" | "damaged" | "blocked";
+
 export interface InfraPoint {
   id: string;
   name: string;
   kind: InfraKind;
   center: [number, number];
+  status?: InfraStatus;
 }
 
 /** A single computer-vision demo finding. */

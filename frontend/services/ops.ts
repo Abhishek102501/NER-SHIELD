@@ -62,7 +62,10 @@ export async function getIncidents(): Promise<Incident[]> {
     if (!Array.isArray(json.incidents) || !json.incidents.every(isIncident)) {
       throw new Error("Malformed /api/incidents response");
     }
-    return json.incidents;
+    // `status` (and the other workflow fields) are new — a real backend
+    // response predating them still validates structurally above, so default
+    // it here rather than let the UI read `undefined`.
+    return json.incidents.map((i) => ({ ...i, status: i.status ?? "new" }));
   } catch (err) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("[incidents] backend unavailable, using demonstration data:", err);

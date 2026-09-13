@@ -4,16 +4,19 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import {
   Bell,
+  CheckCheck,
   ChevronDown,
+  ClipboardList,
   LogOut,
   MapPinned,
+  RotateCcw,
   Settings,
   Shield,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { StatusIndicator } from "@/components/dashboard/StatusIndicator";
-import { NOTIFICATIONS } from "@/data/region";
+import { AuditLogModal } from "@/components/system/AuditLogModal";
 import { SYSTEM_STATUS } from "@/data/system";
 import { useCommand } from "@/lib/command-context";
 import { SEVERITY, cn } from "@/lib/utils";
@@ -47,9 +50,28 @@ function LiveClock() {
   );
 }
 
+function DemoBadge() {
+  return (
+    <span
+      className="hidden items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-accent md:inline-flex"
+      title="This environment runs on simulated demo/training data, not live operational feeds."
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+      Demo
+    </span>
+  );
+}
+
 function NotificationsButton() {
-  const { notificationsOpen, setNotificationsOpen } = useCommand();
-  const unread = NOTIFICATIONS.length;
+  const {
+    notificationsOpen,
+    setNotificationsOpen,
+    notifications,
+    unreadNotificationCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useCommand();
+
   return (
     <div className="relative">
       <button
@@ -64,9 +86,11 @@ function NotificationsButton() {
         )}
       >
         <Bell size={16} />
-        <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-sev-critical px-1 text-[9px] font-bold text-white">
-          {unread}
-        </span>
+        {unreadNotificationCount > 0 && (
+          <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-sev-critical px-1 text-[9px] font-bold text-white">
+            {unreadNotificationCount}
+          </span>
+        )}
       </button>
 
       <AnimatePresence>
@@ -86,25 +110,43 @@ function NotificationsButton() {
             >
               <div className="flex items-center justify-between px-2 py-1.5">
                 <span className="eyebrow">Notifications</span>
-                <span className="numeric text-[10px] text-fg-dim">
-                  {unread} new
-                </span>
+                {unreadNotificationCount > 0 ? (
+                  <button
+                    onClick={markAllNotificationsRead}
+                    className="flex items-center gap-1 text-[10px] font-medium text-accent hover:text-accent-2"
+                  >
+                    <CheckCheck size={11} /> Mark all read
+                  </button>
+                ) : (
+                  <span className="numeric text-[10px] text-fg-dim">All read</span>
+                )}
               </div>
-              <ul className="space-y-1">
-                {NOTIFICATIONS.map((n) => {
+              <ul className="max-h-80 space-y-1 overflow-y-auto">
+                {notifications.map((n) => {
                   const sev = SEVERITY[n.severity];
                   return (
                     <li key={n.id}>
-                      <div className="flex gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-white/5">
+                      <button
+                        onClick={() => markNotificationRead(n.id)}
+                        className={cn(
+                          "flex w-full gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5",
+                          !n.read && "bg-white/[0.03]",
+                        )}
+                      >
                         <span
                           className={cn(
                             "mt-1 h-2 w-2 shrink-0 rounded-full",
-                            sev.dot,
+                            n.read ? "bg-white/15" : sev.dot,
                           )}
                         />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-[12px] font-medium text-fg">
+                            <p
+                              className={cn(
+                                "truncate text-[12px]",
+                                n.read ? "font-normal text-fg-muted" : "font-medium text-fg",
+                              )}
+                            >
                               {n.title}
                             </p>
                             <span className="numeric shrink-0 text-[10px] text-fg-dim">
@@ -115,7 +157,7 @@ function NotificationsButton() {
                             {n.detail}
                           </p>
                         </div>
-                      </div>
+                      </button>
                     </li>
                   );
                 })}
@@ -167,6 +209,8 @@ export function TopBar() {
             {SYSTEM_STATUS.region}
           </span>
           <span className="h-4 w-px bg-white/10" />
+          <DemoBadge />
+          <span className="h-4 w-px bg-white/10" />
         </div>
 
         <LiveClock />
@@ -180,11 +224,60 @@ export function TopBar() {
 
 function ProfileMenu() {
   const [open, setOpen] = useState(false);
-  const items = [
-    { icon: UserRound, label: "Profile" },
-    { icon: Settings, label: "Preferences" },
-    { icon: LogOut, label: "Sign out" },
+  const [auditOpen, setAuditOpen] = useState(false);
+  const { session, sessionLoading, logout, openResetConfirm } = useCommand();
+
+  const name = session?.name ?? (sessionLoading ? "…" : "Guest");
+  const role = session?.role ?? "";
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const items: {
+    icon: typeof UserRound;
+    label: string;
+    action?: () => void;
+    disabledReason?: string;
+  }[] = [
+    {
+      icon: UserRound,
+      label: "Profile",
+      disabledReason: "Single demo identity — nothing else to view.",
+    },
+    {
+      icon: Settings,
+      label: "Account Settings",
+      disabledReason: "Not available on a demo/training account.",
+    },
+    {
+      icon: ClipboardList,
+      label: "Demo Controls",
+      action: () => {
+        setAuditOpen(true);
+        setOpen(false);
+      },
+    },
+    {
+      icon: RotateCcw,
+      label: "Reset Demo Data",
+      action: () => {
+        openResetConfirm();
+        setOpen(false);
+      },
+    },
+    {
+      icon: LogOut,
+      label: "Logout",
+      action: () => {
+        setOpen(false);
+        logout();
+      },
+    },
   ];
+
   return (
     <div className="relative">
       <button
@@ -197,13 +290,11 @@ function ProfileMenu() {
         )}
       >
         <span className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-accent/80 to-accent-deep text-[11px] font-bold text-black">
-          OC
+          {initials || "OC"}
         </span>
         <span className="hidden text-left leading-tight sm:block">
-          <span className="block text-[11px] font-semibold text-fg">
-            Ops Command
-          </span>
-          <span className="block text-[9px] text-fg-dim">Duty Officer</span>
+          <span className="block text-[11px] font-semibold text-fg">{name}</span>
+          <span className="block text-[9px] text-fg-dim">{role}</span>
         </span>
         <ChevronDown
           size={13}
@@ -224,28 +315,32 @@ function ProfileMenu() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="glass-float absolute right-0 top-[calc(100%+10px)] z-40 w-48 rounded-xl p-2"
+              className="glass-float absolute right-0 top-[calc(100%+10px)] z-40 w-56 rounded-xl p-2"
             >
               <div className="px-2 py-1.5">
-                <p className="text-[12px] font-semibold text-fg">Ops Command</p>
-                <p className="text-[10px] text-fg-dim">duty.officer@ner-shield</p>
+                <p className="text-[12px] font-semibold text-fg">{name}</p>
+                <p className="text-[10px] text-fg-dim">{session?.organization}</p>
               </div>
               <div className="my-1 h-px bg-white/8" />
               {items.map((it) => (
                 <button
                   key={it.label}
-                  onClick={() => setOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+                  onClick={it.action}
+                  disabled={!it.action}
+                  title={it.disabledReason}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition-colors hover:bg-white/5 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                 >
                   <it.icon size={14} />
-                  {it.label}
+                  <span className="flex-1">{it.label}</span>
                 </button>
               ))}
-              <p className="px-2 pt-1 text-[9px] text-fg-dim">DEMO account</p>
+              <p className="px-2 pt-1 text-[9px] text-fg-dim">{session?.accountType}</p>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      <AuditLogModal open={auditOpen} onClose={() => setAuditOpen(false)} />
     </div>
   );
 }

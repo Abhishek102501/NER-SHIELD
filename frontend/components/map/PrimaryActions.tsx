@@ -16,7 +16,7 @@ export function PrimaryActions() {
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400, damping: 24 }}
-        className="glass-float flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold text-fg transition-colors hover:border-accent/40"
+        className="map-card flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold text-slate-800 transition-colors hover:border-accent/50"
       >
         <FlaskConical size={15} className="text-accent" />
         <span className="hidden sm:inline">Simulate Scenario</span>

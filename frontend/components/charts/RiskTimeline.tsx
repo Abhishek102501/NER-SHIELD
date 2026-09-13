@@ -152,7 +152,8 @@ function EventMarker({ cx, cy, event, active, onSelect }: EventMarkerProps) {
 }
 
 export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
-  const { selectedTimelineId, selectTimeline, selectedEventId, selectEvent } = useCommand();
+  const { selectedTimelineId, selectTimeline, selectedEventId, selectEvent, activeSimulation } =
+    useCommand();
   // Pixel anchor for the popup card — pure presentation, not selection state.
   // The selection itself lives in shared `selectedEventId` (also driven by the map).
   const [anchor, setAnchor] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -160,14 +161,24 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
   const series = useMemo(() => seriesForRange(rangeHours), [rangeHours]);
   const events = useMemo(() => eventsForRange(rangeHours), [rangeHours]);
 
+  // Observed history never changes — only the forecast horizon shifts when a
+  // DEMO SIMULATION is active, and only in this chart's own presentation
+  // data, not the underlying MASTER_SERIES.
   const data: ChartDatum[] = useMemo(
     () =>
-      series.map((p) => ({
-        ...p,
-        observedValue: p.hourOffset <= 0 ? p.risk : null,
-        forecastValue: p.hourOffset >= 0 ? p.risk : null,
-      })),
-    [series],
+      series.map((p) => {
+        const forecastRisk =
+          p.hourOffset > 0 && activeSimulation
+            ? Math.max(0, Math.min(100, p.risk + activeSimulation.delta))
+            : p.risk;
+        return {
+          ...p,
+          risk: p.hourOffset > 0 ? forecastRisk : p.risk,
+          observedValue: p.hourOffset <= 0 ? p.risk : null,
+          forecastValue: p.hourOffset >= 0 ? forecastRisk : null,
+        };
+      }),
+    [series, activeSimulation],
   );
 
   const nowPoint = data.find((d) => d.now) ?? data[data.length - 1];
@@ -193,11 +204,11 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
       onClick={() => selectEvent(null)}
     >
       {/* Compact risk scale */}
-      <div className="pointer-events-none absolute left-0 top-0 z-10 flex flex-col gap-0.75 py-1">
+      <div className="pointer-events-none absolute left-0 top-0 z-10 flex flex-col gap-1 py-1">
         {RISK_BANDS.map((b) => (
           <div key={b.band} className="flex items-center gap-1">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: SEVERITY[b.band].hex }} />
-            <span className="numeric text-[8px] leading-none text-fg-dim">
+            <span className="numeric text-[9px] leading-none text-fg-dim">
               {b.min}
               {b.max < 100 ? `–${b.max}` : "+"}
             </span>
@@ -208,7 +219,7 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data}
-          margin={{ top: 14, right: 10, bottom: 0, left: 34 }}
+          margin={{ top: 20, right: 10, bottom: 0, left: 34 }}
           onClick={(state: { activeLabel?: string | number }) => {
             const offset = Number(state?.activeLabel);
             const point = byOffset.get(offset);
@@ -273,7 +284,10 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
             cursor={{ stroke: "rgba(255,255,255,0.14)", strokeDasharray: "4 4" }}
           />
 
-          {/* Observed vs forecast zone labels + NOW divider */}
+          {/* Single NOW divider — a bolded "NOW" x-axis tick already marks the
+              same instant below, and the header legend already carries the
+              Observed/Forecast key, so this only draws the line + one label
+              above it (never both, per the no-duplicate-labels rule). */}
           <ReferenceLine
             x={0}
             stroke="#22c55e"
@@ -283,17 +297,9 @@ export function RiskTimeline({ rangeHours }: { rangeHours: number }) {
               const vx = props.viewBox?.x ?? 0;
               const vy = props.viewBox?.y ?? 0;
               return (
-                <g>
-                  <text x={vx} y={vy - 3} textAnchor="middle" fontSize={8} fontWeight={700} fill="#22c55e" className="numeric">
-                    NOW
-                  </text>
-                  <text x={vx - 8} y={vy + 11} textAnchor="end" fontSize={8} fill="#9ca3af" className="numeric uppercase tracking-wider">
-                    Observed
-                  </text>
-                  <text x={vx + 8} y={vy + 11} textAnchor="start" fontSize={8} fill="#22c55e" fillOpacity={0.8} className="numeric uppercase tracking-wider">
-                    Forecast
-                  </text>
-                </g>
+                <text x={vx} y={vy - 6} textAnchor="middle" fontSize={9} fontWeight={700} fill="#22c55e" className="numeric">
+                  NOW
+                </text>
               );
             }}
           />

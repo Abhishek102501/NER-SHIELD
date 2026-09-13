@@ -17,7 +17,10 @@ export function Section({
   return (
     <section
       id={id}
-      className={cn("relative scroll-mt-20 px-6 py-24 sm:py-28", className)}
+      // scroll-mt clears the fixed navbar (~72px tall) on anchor-jump — kept
+      // generous rather than exact so it doesn't reopen as a few-pixel overlap
+      // under different font metrics/zoom levels.
+      className={cn("relative scroll-mt-28 px-6 py-24 sm:py-28", className)}
     >
       <div className={cn(!bleed && "mx-auto w-full max-w-6xl")}>{children}</div>
     </section>

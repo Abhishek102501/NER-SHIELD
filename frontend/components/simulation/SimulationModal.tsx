@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
 type Phase = "idle" | "running" | "done";
 
 export function SimulationModal() {
-  const { activeModal, closeModal } = useCommand();
+  const { activeModal, closeModal, runSimulation, clearSimulation, activeSimulation, permissions } =
+    useCommand();
   const open = activeModal === "simulation";
 
   const [scenario, setScenario] = useState<string>("rainfall");
@@ -20,7 +21,8 @@ export function SimulationModal() {
   const [duration, setDuration] = useState(12); // h
   const [phase, setPhase] = useState<Phase>("idle");
 
-  // Deterministic mock projection.
+  // Deterministic projection — the same formula runSimulation() uses, so the
+  // preview shown here matches exactly what gets written to shared state.
   const projected = Math.min(
     99,
     Math.round(
@@ -30,10 +32,21 @@ export function SimulationModal() {
   const delta = +(projected - RISK_SCORE.value).toFixed(1);
 
   const run = () => {
+    if (!permissions.simulateScenario) return;
     setPhase("running");
-    window.setTimeout(() => setPhase("done"), 950);
+    window.setTimeout(() => {
+      runSimulation({
+        scenarioLabel: SCENARIOS.find((s) => s.id === scenario)?.label ?? scenario,
+        intensity,
+        duration,
+      });
+      setPhase("done");
+    }, 950);
   };
-  const reset = () => setPhase("idle");
+  const reset = () => {
+    setPhase("idle");
+    clearSimulation();
+  };
 
   const handleClose = () => {
     closeModal();
@@ -50,20 +63,22 @@ export function SimulationModal() {
       footer={
         <div className="flex items-center justify-between gap-3">
           <span className="text-[11px] text-fg-dim">
-            Demonstration model · no backend inference
+            {permissions.simulateScenario
+              ? "DEMO SIMULATION · updates the AI panel, risk timeline forecast, and rainfall"
+              : "Simulation is disabled for this role"}
           </span>
           <div className="flex gap-2">
-            {phase === "done" ? (
+            {(phase === "done" || activeSimulation) ? (
               <button
                 onClick={reset}
                 className="flex items-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-[12px] font-medium text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
               >
-                <RotateCcw size={13} /> Reset
+                <RotateCcw size={13} /> Clear
               </button>
             ) : null}
             <button
               onClick={run}
-              disabled={phase === "running"}
+              disabled={phase === "running" || !permissions.simulateScenario}
               className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-[12px] font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               {phase === "running" ? (
@@ -81,6 +96,14 @@ export function SimulationModal() {
       }
     >
       <div className="space-y-5">
+        {activeSimulation && phase !== "done" && (
+          <div className="rounded-lg border border-accent/30 bg-accent/[0.06] px-3 py-2 text-[11px] text-fg-muted">
+            <span className="font-bold uppercase tracking-wider text-accent">Demo simulation active</span>
+            {" — "}
+            {activeSimulation.scenarioLabel}, projected {activeSimulation.projectedRisk}%. Running a
+            new one replaces it.
+          </div>
+        )}
         {/* Scenario */}
         <div>
           <p className="eyebrow mb-2">Scenario</p>
@@ -132,7 +155,7 @@ export function SimulationModal() {
               exit={{ opacity: 0 }}
               className="rounded-xl border border-sev-critical/30 bg-sev-critical/[0.06] p-4"
             >
-              <p className="eyebrow mb-2 text-sev-critical">Projected Outcome</p>
+              <p className="eyebrow mb-2 text-sev-critical">Demo Simulation · Projected Outcome</p>
               <div className="flex items-end gap-4">
                 <div>
                   <span className="numeric text-3xl font-semibold text-fg">

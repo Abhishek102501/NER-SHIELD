@@ -49,25 +49,25 @@ export function ZoneDetailPanel({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 24 }}
           transition={{ type: "spring", stiffness: 320, damping: 30 }}
-          className="glass-float pointer-events-auto absolute right-3 top-3 z-20 flex max-h-[calc(100%-1.5rem)] w-[300px] max-w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-xl"
+          className="map-card pointer-events-auto absolute right-3 top-3 z-20 flex max-h-[calc(100%-1.5rem)] w-[300px] max-w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-xl"
         >
           <span className={cn("absolute inset-x-0 top-0 h-0.5", SEVERITY[d.band].dot)} />
           <div className="flex items-start justify-between gap-2 px-4 pb-3 pt-4">
             <div>
               <span className="flex items-center gap-2">
-                <span className={cn("eyebrow", SEVERITY[d.band].text)}>
+                <span className={cn("map-eyebrow", SEVERITY[d.band].text)}>
                   {SEVERITY[d.band].label} Risk Zone
                 </span>
-                <span className="rounded bg-white/10 px-1 py-0.5 text-[8px] font-bold tracking-widest text-fg-dim">
+                <span className="rounded bg-slate-900/6 px-1 py-0.5 text-[8px] font-bold tracking-widest text-slate-400">
                   DEMO
                 </span>
               </span>
-              <h4 className="mt-1 text-sm font-semibold text-fg">{d.name}</h4>
+              <h4 className="mt-1 text-sm font-semibold text-slate-900">{d.name}</h4>
             </div>
             <button
               onClick={onClose}
               aria-label="Close zone detail"
-              className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-white/10 text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-slate-900/10 text-slate-400 transition-colors hover:bg-slate-900/5 hover:text-slate-900"
             >
               <X size={14} />
             </button>
@@ -77,14 +77,14 @@ export function ZoneDetailPanel({
             {/* Score + probability */}
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="eyebrow mb-0.5">Risk Score</p>
+                <p className="map-eyebrow mb-0.5">Risk Score</p>
                 <span className={cn("numeric text-3xl font-semibold", SEVERITY[d.band].text)}>
                   {d.risk}%
                 </span>
               </div>
               <div className="text-right">
-                <p className="eyebrow mb-0.5">Probability</p>
-                <span className="numeric text-xl font-semibold text-fg">
+                <p className="map-eyebrow mb-0.5">Probability</p>
+                <span className="numeric text-xl font-semibold text-slate-900">
                   {d.probability}%
                 </span>
               </div>
@@ -101,10 +101,10 @@ export function ZoneDetailPanel({
 
             {d.drivers.length > 0 && (
               <div className="mt-3">
-                <p className="eyebrow mb-1.5">Primary Drivers</p>
+                <p className="map-eyebrow mb-1.5">Primary Drivers</p>
                 <ul className="space-y-1">
                   {d.drivers.map((driver) => (
-                    <li key={driver} className="flex gap-2 text-[11px] text-fg-muted">
+                    <li key={driver} className="flex gap-2 text-[11px] text-slate-500">
                       <span
                         className={cn(
                           "mt-1.5 h-1 w-1 shrink-0 rounded-full",
@@ -119,8 +119,8 @@ export function ZoneDetailPanel({
             )}
 
             <div className="mt-3">
-              <p className="eyebrow mb-1">Infrastructure at Risk</p>
-              <p className="text-[12px] text-fg">{d.infrastructureAtRisk}</p>
+              <p className="map-eyebrow mb-1">Infrastructure at Risk</p>
+              <p className="text-[12px] text-slate-800">{d.infrastructureAtRisk}</p>
             </div>
 
             <div
@@ -130,14 +130,14 @@ export function ZoneDetailPanel({
                 SEVERITY[d.band].bgSoft,
               )}
             >
-              <p className="eyebrow mb-1">Recommended Action</p>
-              <p className="text-[12px] leading-snug text-fg">{d.recommendedAction}</p>
+              <p className="map-eyebrow mb-1">Recommended Action</p>
+              <p className="text-[12px] leading-snug text-slate-800">{d.recommendedAction}</p>
             </div>
 
             {onFocus && (
               <button
                 onClick={() => onFocus(d)}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.04] py-2 text-[11px] font-semibold text-fg-muted transition-colors hover:bg-white/[0.08] hover:text-fg"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900/[0.04] py-2 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-900/[0.08] hover:text-slate-900"
               >
                 <Crosshair size={13} />
                 {focusLabel}
@@ -160,12 +160,12 @@ function Stat({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg bg-white/[0.03] px-2.5 py-1.5">
-      <p className="flex items-center gap-1 text-[9px] uppercase tracking-[0.12em] text-fg-dim">
+    <div className="rounded-lg bg-slate-900/[0.035] px-2.5 py-1.5">
+      <p className="flex items-center gap-1 text-[9px] uppercase tracking-[0.12em] text-slate-400">
         {icon}
         {label}
       </p>
-      <p className="numeric mt-0.5 font-semibold text-fg">{value}</p>
+      <p className="numeric mt-0.5 font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

@@ -45,6 +45,8 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: "Critical zone escalation",
     detail: "NH-10 / Sikkim corridor crossed the critical risk threshold.",
     timeAgo: "4 min ago",
+    read: false,
+    createdAt: "2026-09-13T06:26:00.000Z",
   },
   {
     id: "ntf-2",
@@ -52,6 +54,8 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: "Rainfall intensity rising",
     detail: "72h accumulation reached 287 mm across the East District.",
     timeAgo: "19 min ago",
+    read: false,
+    createdAt: "2026-09-13T06:11:00.000Z",
   },
   {
     id: "ntf-3",
@@ -59,6 +63,8 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: "New field report",
     detail: "Citizen report filed for debris on Hill Road 04.",
     timeAgo: "41 min ago",
+    read: false,
+    createdAt: "2026-09-13T05:49:00.000Z",
   },
   {
     id: "ntf-4",
@@ -66,5 +72,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: "Sensor maintenance",
     detail: "Inclinometer WR-04 flagged for calibration.",
     timeAgo: "1 hr ago",
+    read: true,
+    createdAt: "2026-09-13T05:30:00.000Z",
   },
 ];
