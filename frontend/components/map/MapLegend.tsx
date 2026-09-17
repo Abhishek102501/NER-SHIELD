@@ -56,6 +56,21 @@ export function MapLegend() {
             <div className="h-px bg-slate-900/8" />
 
             <div>
+              <p className="map-eyebrow mb-1.5 text-accent/70">AI Landslide Detections</p>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-4 rounded-sm border border-dashed border-[#f97316]"
+                    style={{ backgroundColor: "rgba(249,115,22,0.22)" }}
+                  />
+                  <span className="text-[11px] text-slate-600">Detected zone (color = severity)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-900/8" />
+
+            <div>
               <p className="map-eyebrow mb-1.5 text-accent/70">Natural</p>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">

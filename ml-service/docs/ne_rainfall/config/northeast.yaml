@@ -1,0 +1,157 @@
+# ---------------------------------------------------------------------------
+# North East India rainfall nowcasting -- region configuration
+#
+# This file is the ONLY place the region is defined.  The model code, the
+# preprocessing and the training loop are region-agnostic: point them at
+# config/mumbai_parity.yaml and you reproduce the original Mumbai experiment
+# byte-for-byte.
+# ---------------------------------------------------------------------------
+
+region:
+  name: North East India
+  slug: northeast
+  # Bounding box covering Sikkim + the 7 sister states.
+  bbox:
+    lat_min: 21.5
+    lat_max: 29.5
+    lon_min: 88.0
+    lon_max: 97.5
+  timezone: Asia/Kolkata
+  stations_file: data/stations_northeast.csv
+
+season:
+  # Mumbai used JJAS (1 Jun - 30 Sep).  North East India has a materially
+  # longer wet season: the pre-monsoon "Bordoisila" thunderstorm season starts
+  # in March-April and the retreat is late October.  Training only on JJAS
+  # here throws away ~35% of the region's rainy hours and is the single
+  # largest accuracy regression when naively porting the Mumbai pipeline.
+  start_month_day: "03-01"
+  end_month_day: "10-31"
+
+data:
+  # Temporal resolution of the modelling grid.
+  # Mumbai AWS data was 15 min.  No comparable public 15-min network exists
+  # for the North East, so the reference build runs hourly and RESAMPLES the
+  # sequence lengths so the model sees the same tensor shape (12 x 111).
+  freq: "1h"
+  start_date: "2015-01-01"
+  end_date: "2023-12-31"
+
+  # Feature blocks, in column order.  3 blocks x 37 stations = 111 features,
+  # identical to the Mumbai build -> Mumbai checkpoints load as a warm start.
+  blocks: [rainfall, wind_speed, nwp_precip]
+
+  sources:
+    # Observed rainfall + wind.  'era5' (Open-Meteo archive) is the default
+    # because it is keyless, global and verified reachable.  'nasa_power' is a
+    # government (NASA LaRC) alternative with identical coverage.
+    # 'imd_gridded' uses IMD Pune 0.25 deg gauge-based gridded rainfall -- the
+    # authoritative Indian government product -- but its servers are often
+    # unreachable outside India, so it is opt-in.  See docs/DATA_SOURCES.md.
+    observed: era5
+    # Numerical-weather-prediction feature, the analogue of the Mumbai GFS
+    # column block.  NOAA GFS via Open-Meteo.
+    nwp: gfs
+    # Optional gauge-based cross-check / bias correction.
+    reference: imd_gridded
+
+  nwp_grid_step: 0.25       # GFS native grid spacing, as in the original
+  nwp_shift_steps: 1        # shift NWP left by one step so it is a forecast
+
+windowing:
+  n_steps_in: 12            # lookback  (12 h at 1h freq; 3 h at 15min freq)
+  n_steps_out: 12           # horizon   (12 h at 1h freq; 3 h at 15min freq)
+  train_split: 0.9
+  # Split chronologically by whole seasons rather than by row index so the
+  # test set is never a fragment of a training storm.
+  split_by_season: true
+
+preprocess:
+  # North East rainfall is far more heavy-tailed than Mumbai's (Mawsynram and
+  # Sohra routinely exceed 100 mm/h).  Plain min-max on raw millimetres pushes
+  # ~99% of samples into the bottom 2% of the [0,1] range and the MSE loss then
+  # collapses to predicting ~0.  log1p first, then min-max, keeps the dynamic
+  # range usable.  Set transform: none for exact Mumbai parity.
+  transform: log1p
+  scaler: minmax            # minmax | robust
+  fit_on: train_only        # never touch the test split when fitting
+  clip_quantile: 0.999      # guard against single corrupt gauge spikes
+
+model:
+  n_features: 111           # 3 blocks x 37 stations -- keep at 111 for
+                            # checkpoint compatibility with the Mumbai models
+  target_station: Guwahati  # station whose rainfall is predicted (column 0)
+
+  lstm_torch:
+    n_layers: 4
+    n_hidden: 64
+    dropout: 0.1
+    epochs: 50
+    batch_size: 32
+    lr: 0.001
+    scheduler_t_max: 64
+
+  lstm_tf:
+    units: [100, 80, 64, 32, 16]
+    epochs: 50
+    batch_size: 12
+
+  # Gradient-boosted trees. Trains in seconds, interpretable, and the
+  # second member of the ensemble whose disagreement sets forecast confidence.
+  xgboost:
+    early_stopping_rounds: 50
+    feature_mode: summary       # summary | flatten
+    params:
+      n_estimators: 600
+      max_depth: 6
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      min_child_weight: 5
+      reg_lambda: 1.0
+      # reg:squarederror keeps the loss identical to the LSTM so the two are
+      # directly comparable. reg:tweedie with tweedie_variance_power ~1.5 fits
+      # the zero-inflated rainfall distribution better -- switch once you no
+      # longer need the like-for-like comparison.
+      objective: "reg:squarederror"
+
+  transformer:
+    d_model: 111
+    nhead: 3
+    n_layers: 6
+    dim_feedforward: 64
+    dropout: 0.2
+    epochs: 50
+    batch_size: 32
+    n_enc: 24
+    n_out: 16
+    dec_overlap: 12
+
+# Landslide susceptibility, trained on the Landslide4Sense 2022 benchmark
+# (github.com/iarai/Landslide4Sense-2022). Terrain and spectra only -- the
+# rainfall forecast supplies the trigger, and risk.engine couples them.
+landslide:
+  data_root: data/raw/landslide4sense
+  model_dir: Models/landslide_xgb
+  include_texture: true         # 3x3 band means; cheap spatial context
+  negative_ratio: 3.0           # background pixels kept per landslide pixel
+  # Rainfall intensity-duration trigger, I = a * D**-b (mm/h, hours).
+  # Caine (1980) global constants -- NOT calibrated for North East India.
+  # Fit these against a Geological Survey of India regional inventory before
+  # any operational use; every risk record records which constants it used.
+  intensity_duration:
+    a: 14.82
+    b: 0.39
+    calibrated_for_region: false
+
+evaluate:
+  lead_times: null          # null -> derived from freq and n_steps_out
+  # Heavy-rainfall categorical scores. IMD North East warning thresholds,
+  # expressed here in mm per model step.
+  thresholds_mm: [0.5, 2.5, 7.5, 15.0]
+
+paths:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  models_dir: Models
+  reports_dir: reports

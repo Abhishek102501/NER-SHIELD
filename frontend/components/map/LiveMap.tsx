@@ -32,6 +32,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BRIDGES, DEPOTS, HOSPITALS } from "@/data/infrastructure";
+import { getGisLayer } from "@/services/gis";
 import {
   INCIDENT_POINTS,
   MAP_CENTER,
@@ -88,6 +89,28 @@ interface LiveMapProps {
    * which has no CommandProvider to source it from. */
   incidents?: Incident[];
   onIncidentSelect?: (id: string) => void;
+  /** GeoJSON FeatureCollection of the current Landslide4Sense analysis's
+   * detected polygons (see command-context's `landslideAnalysis.geojson`).
+   * `null`/omitted renders no landslide-detection layer at all. */
+  landslideGeojson?: GeoJSON.FeatureCollection | null;
+  selectedLandslideDetectionId?: string | null;
+  onLandslideDetectionSelect?: (id: string | null) => void;
+}
+
+const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+
+/** Injects a `color` property (from each feature's `severity`, matching
+ * SEVERITY's own hex tokens) so the paint expressions below can stay a
+ * simple `["get", "color"]` lookup, the same pattern risk-zones already uses. */
+function withSeverityColor(fc: GeoJSON.FeatureCollection): GeoJSON.FeatureCollection {
+  return {
+    ...fc,
+    features: fc.features.map((f) => {
+      const severity = (f.properties as { severity?: Severity } | null)?.severity;
+      const color = severity ? SEVERITY[severity].hex : "#f97316";
+      return { ...f, properties: { ...f.properties, color } };
+    }),
+  };
 }
 
 const DEFAULT_LAYERS: Record<string, boolean> = {};
@@ -291,6 +314,9 @@ export default function LiveMap({
   onEventSelect,
   incidents: incidentsProp,
   onIncidentSelect,
+  landslideGeojson = null,
+  selectedLandslideDetectionId = null,
+  onLandslideDetectionSelect,
 }: LiveMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
@@ -299,6 +325,8 @@ export default function LiveMap({
   const layersRef = useRef(layers);
   const applyMarkerVisibilityRef = useRef<() => void>(() => {});
   const clusterEntriesRef = useRef<IncidentEntry[]>([]);
+  const landslideGeojsonRef = useRef(landslideGeojson);
+  const onLandslideDetectionSelectRef = useRef(onLandslideDetectionSelect);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [hoverTooltip, setHoverTooltip] = useState<
     { x: number; y: number; name: string; band: Severity } | null
@@ -307,6 +335,29 @@ export default function LiveMap({
   useEffect(() => {
     layersRef.current = layers;
   }, [layers]);
+
+  useEffect(() => {
+    onLandslideDetectionSelectRef.current = onLandslideDetectionSelect;
+  }, [onLandslideDetectionSelect]);
+
+  useEffect(() => {
+    landslideGeojsonRef.current = landslideGeojson;
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    const source = map.getSource("landslide-detections") as GeoJSONSource | undefined;
+    source?.setData(withSeverityColor(landslideGeojson ?? EMPTY_FEATURE_COLLECTION));
+  }, [landslideGeojson]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    if (!map.getLayer("landslide-detections-highlight")) return;
+    map.setFilter("landslide-detections-highlight", [
+      "==",
+      ["get", "id"],
+      selectedLandslideDetectionId ?? "__none__",
+    ]);
+  }, [selectedLandslideDetectionId]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -576,6 +627,31 @@ export default function LiveMap({
         data: SCHOOLS,
       });
 
+      // Upgrade the five layers the backend now serves for real (GET
+      // /api/gis/layers/{id} — see services/gis.ts) from their demo GeoJSON to
+      // backend-served data, once fetched. Never blocks initial render — the
+      // sources above already painted with demo data — and silently keeps
+      // that demo data on any failure (getGisLayer resolves `null`, not a
+      // rejection). "infrastructure" (hospitals/bridges/depots) and
+      // "incident-points" render as individually-constructed Markers from
+      // static arrays elsewhere in this file, not as a GeoJSON source, so
+      // they aren't upgraded here — see the project audit for why that's a
+      // separate, deliberately deferred change. Rainfall stays demo-only by
+      // design (see data/geo.ts's RAINFALL_OVERLAY doc comment).
+      for (const [sourceId, layerId] of [
+        ["risk-zones", "risk-zone-polygons"],
+        ["roads", "roads"],
+        ["rivers", "rivers"],
+        ["villages", "villages"],
+        ["schools", "schools"],
+      ] as const) {
+        getGisLayer(layerId).then((geojson) => {
+          if (!geojson) return;
+          const source = map.getSource(sourceId) as GeoJSONSource | undefined;
+          source?.setData(geojson);
+        });
+      }
+
       // ----------------------------------------------------------
       // RAINFALL HEATMAP
       // ----------------------------------------------------------
@@ -778,6 +854,94 @@ export default function LiveMap({
           "line-opacity": 0.9,
         },
         filter: ["==", ["get", "id"], "__none__"],
+      });
+
+      // ----------------------------------------------------------
+      // LANDSLIDE4SENSE AI DETECTIONS — a per-analysis GeoJSON layer, separate
+      // from the static "risk-zones" susceptibility layer above. Empty until
+      // an analysis completes (see command-context's `landslideAnalysis`).
+      // ----------------------------------------------------------
+
+      map.addSource("landslide-detections", {
+        type: "geojson",
+        data: withSeverityColor(landslideGeojsonRef.current ?? EMPTY_FEATURE_COLLECTION),
+        generateId: true,
+      });
+
+      map.addLayer({
+        id: "landslide-detections-fill",
+        type: "fill",
+        source: "landslide-detections",
+        paint: {
+          "fill-color": ["coalesce", ["get", "color"], "#f97316"],
+          "fill-opacity": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            0.4,
+            0.22,
+          ],
+        },
+      });
+
+      map.addLayer({
+        id: "landslide-detections-line",
+        type: "line",
+        source: "landslide-detections",
+        paint: {
+          "line-color": ["coalesce", ["get", "color"], "#f97316"],
+          "line-width": 2.2,
+          "line-dasharray": [2, 1],
+          "line-opacity": 0.95,
+        },
+      });
+
+      map.addLayer({
+        id: "landslide-detections-highlight",
+        type: "line",
+        source: "landslide-detections",
+        paint: {
+          "line-color": "#1e293b",
+          "line-width": 3,
+          "line-opacity": 0.9,
+        },
+        filter: ["==", ["get", "id"], "__none__"],
+      });
+
+      let hoveredLandslideFeatureId: number | null = null;
+
+      map.on("mousemove", "landslide-detections-fill", (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
+        if (!feature || feature.id === undefined) return;
+        if (hoveredLandslideFeatureId !== null && hoveredLandslideFeatureId !== feature.id) {
+          map.setFeatureState(
+            { source: "landslide-detections", id: hoveredLandslideFeatureId },
+            { hover: false },
+          );
+        }
+        hoveredLandslideFeatureId = feature.id as number;
+        map.setFeatureState(
+          { source: "landslide-detections", id: hoveredLandslideFeatureId },
+          { hover: true },
+        );
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", "landslide-detections-fill", () => {
+        if (hoveredLandslideFeatureId !== null) {
+          map.setFeatureState(
+            { source: "landslide-detections", id: hoveredLandslideFeatureId },
+            { hover: false },
+          );
+        }
+        hoveredLandslideFeatureId = null;
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.on("click", "landslide-detections-fill", (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
+        const id = (feature?.properties as { id?: string } | undefined)?.id;
+        if (!id) return;
+        onLandslideDetectionSelectRef.current?.(id);
       });
 
       // ----------------------------------------------------------
@@ -1349,6 +1513,11 @@ const HAZARD_TYPES = ["landslide", "flood", "fire", "earthquake"];
 function applyLayerVisibility(map: MLMap, layers: Record<string, boolean>) {
   const groups: Record<string, string[]> = {
     "risk-zones": ["risk-zones-fill", "risk-zones-glow", "risk-zones-line", "risk-zones-highlight"],
+    "landslide-detections": [
+      "landslide-detections-fill",
+      "landslide-detections-line",
+      "landslide-detections-highlight",
+    ],
     rainfall: ["rainfall"],
     roads: ["roads", "roads-casing"],
     rivers: ["rivers", "rivers-casing"],

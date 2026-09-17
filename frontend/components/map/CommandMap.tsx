@@ -26,7 +26,17 @@ const MAP_EVENTS = mappableTimelineEvents(TIMELINE_EVENTS);
 
 /** The GIS map inside the command center — real MapLibre, wired to the layer control. */
 export function CommandMap() {
-  const { layers, selectedEventId, selectEvent, incidents, selectedIncidentId, selectIncident } = useCommand();
+  const {
+    layers,
+    selectedEventId,
+    selectEvent,
+    incidents,
+    selectedIncidentId,
+    selectIncident,
+    landslideAnalysis,
+    selectedLandslideDetectionId,
+    selectLandslideDetection,
+  } = useCommand();
   const [zone, setZone] = useState<RiskZone | null>(null);
   const apiRef = useRef<LiveMapApi | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -41,6 +51,20 @@ export function CommandMap() {
       apiRef.current?.flyTo(incident.lngLat, 12);
     }
   }, [selectedIncidentId, incidents]);
+
+  // Same pattern as incident selection above — picking a detection in the
+  // Landslide AI modal previously only highlighted it on the map if it
+  // already happened to be in view (setFilter on landslide-detections-
+  // highlight), with no way to actually get there.
+  useEffect(() => {
+    if (!selectedLandslideDetectionId) return;
+    const detection = landslideAnalysis?.detections.find(
+      (d) => d.id === selectedLandslideDetectionId,
+    );
+    if (detection?.centroid) {
+      apiRef.current?.flyTo([detection.centroid.lon, detection.centroid.lat], 12);
+    }
+  }, [selectedLandslideDetectionId, landslideAnalysis]);
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(document.fullscreenElement === wrapperRef.current);
@@ -78,6 +102,7 @@ export function CommandMap() {
       "low-incidents": layers["low-incidents"] !== false,
       hospitals: layers["hospitals"] !== false,
       shelters: layers["shelters"] !== false,
+      "landslide-detections": layers["landslide-detections"] !== false,
     }),
     [layers],
   );
@@ -94,6 +119,9 @@ export function CommandMap() {
         onEventSelect={selectEvent}
         incidents={incidents}
         onIncidentSelect={selectIncident}
+        landslideGeojson={landslideAnalysis?.geojson ?? null}
+        selectedLandslideDetectionId={selectedLandslideDetectionId}
+        onLandslideDetectionSelect={selectLandslideDetection}
         onReady={(api) => {
           apiRef.current = api;
         }}

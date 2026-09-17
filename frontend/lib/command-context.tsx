@@ -14,10 +14,13 @@ import {
 import { DEFAULT_LAYER_STATE } from "@/data/layers";
 import { INCIDENTS } from "@/data/incidents";
 import { NOTIFICATIONS } from "@/data/region";
-import { RESPONSE_UNITS } from "@/data/response";
+import { RESPONSE_UNITS, type ResponseUnit } from "@/data/response";
 import { RISK_TIMELINE } from "@/data/timeline";
 import { DEMO_PERMISSIONS } from "@/lib/auth";
 import { getIncidents } from "@/services/ops";
+import { getLandslideAnalysis, startLandslideDemoAnalysis } from "@/services/landslide";
+import { explainRainfallDemoForecast, runRainfallDemoForecast } from "@/services/rainfall";
+import { getResponseUnits, recordDispatch } from "@/services/response";
 import type {
   AppNotification,
   AuditEvent,
@@ -27,6 +30,8 @@ import type {
   PermissionSet,
   Severity,
 } from "@/types";
+import type { LandslideAnalysisResult, LandslideDetection } from "@/types/landslide";
+import type { RainfallExplanation, RainfallForecastResult } from "@/types/rainfall";
 
 export type ModalKind = "simulation" | "report" | null;
 
@@ -186,6 +191,9 @@ interface CommandState {
   acknowledgeIncident: (id: string) => void;
   updateIncidentStatus: (id: string, status: IncidentStatus) => void;
   dispatchUnit: (id: string, unitId: string, priority: string, notes: string) => void;
+  // Response unit roster (real backend, with an automatic demo fallback — see
+  // services/response.ts)
+  responseUnits: ResponseUnit[];
 
   // Selection
   selectedIncidentId: string | null;
@@ -208,6 +216,34 @@ interface CommandState {
   activeSimulation: SimulationResult | null;
   runSimulation: (params: SimulationParams) => SimulationResult;
   clearSimulation: () => void;
+
+  // Landslide4Sense AI analysis (real backend — see services/landslide.ts). `mode` on the
+  // result tells you whether it actually ran the real model or the labeled mock pipeline.
+  landslideModalOpen: boolean;
+  openLandslideModal: () => void;
+  closeLandslideModal: () => void;
+  landslideAnalysis: LandslideAnalysisResult | null;
+  landslidePending: boolean;
+  landslideError: string | null;
+  runLandslideDemoAnalysis: () => void;
+  selectedLandslideDetectionId: string | null;
+  selectLandslideDetection: (id: string | null) => void;
+  selectedLandslideDetection: LandslideDetection | null;
+
+  // Mumbai rainfall LSTM forecast (real backend — see services/rainfall.ts). `mode` on the
+  // result tells you whether it actually ran the real trained model or the labeled demo pipeline.
+  rainfallForecast: RainfallForecastResult | null;
+  rainfallPending: boolean;
+  rainfallError: string | null;
+  runRainfallForecast: () => void;
+
+  // SHAP (TreeSHAP, exact) attribution for the current rainfallForecast's +60min
+  // horizon — see services/rainfall.ts. Only available when the AI service has the
+  // XGBoost co-forecaster loaded; throws/fails otherwise, surfaced via rainfallExplanationError.
+  rainfallExplanation: RainfallExplanation | null;
+  rainfallExplanationPending: boolean;
+  rainfallExplanationError: string | null;
+  explainRainfallForecast: () => void;
 }
 
 const Ctx = createContext<CommandState | null>(null);
@@ -236,6 +272,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
   // first client paint match, then upgraded (matches the getIncidents() /
   // backend-fallback pattern services/ops.ts already uses elsewhere).
   const [incidents, setIncidents] = useState<Incident[]>(INCIDENTS);
+  const [responseUnits, setResponseUnits] = useState(RESPONSE_UNITS);
   const [notifications, setNotifications] = useState<AppNotification[]>(NOTIFICATIONS);
   const [auditLog, setAuditLog] = useState<AuditEvent[]>([]);
   const [activeSimulation, setActiveSimulation] = useState<SimulationResult | null>(null);
@@ -250,6 +287,21 @@ export function CommandProvider({ children }: { children: ReactNode }) {
   );
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(7.5);
+
+  const [landslideModalOpen, setLandslideModalOpen] = useState(false);
+  const [landslideAnalysis, setLandslideAnalysis] = useState<LandslideAnalysisResult | null>(null);
+  const [landslidePending, setLandslidePending] = useState(false);
+  const [landslideError, setLandslideError] = useState<string | null>(null);
+  const [selectedLandslideDetectionId, setSelectedLandslideDetectionId] = useState<string | null>(
+    null,
+  );
+
+  const [rainfallForecast, setRainfallForecast] = useState<RainfallForecastResult | null>(null);
+  const [rainfallPending, setRainfallPending] = useState(false);
+  const [rainfallError, setRainfallError] = useState<string | null>(null);
+  const [rainfallExplanation, setRainfallExplanation] = useState<RainfallExplanation | null>(null);
+  const [rainfallExplanationPending, setRainfallExplanationPending] = useState(false);
+  const [rainfallExplanationError, setRainfallExplanationError] = useState<string | null>(null);
 
   const logActivity = useCallback((action: string, detail: string) => {
     setAuditLog((prev) => [
@@ -306,6 +358,17 @@ export function CommandProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     getIncidents().then((fetched) => {
       if (!cancelled && fetched.length > 0 && !hydrated.current) setIncidents(fetched);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Real (with demo fallback) response unit roster — see services/response.ts.
+  useEffect(() => {
+    let cancelled = false;
+    getResponseUnits().then((fetched) => {
+      if (!cancelled && fetched.length > 0) setResponseUnits(fetched);
     });
     return () => {
       cancelled = true;
@@ -446,8 +509,12 @@ export function CommandProvider({ children }: { children: ReactNode }) {
 
   const dispatchUnit = useCallback(
     (id: string, unitId: string, priority: string, notes: string) => {
-      const unit = RESPONSE_UNITS.find((u) => u.id === unitId);
+      const unit = responseUnits.find((u) => u.id === unitId);
       if (!unit) return;
+      // Persist the real dispatch record to the backend (see
+      // ResponseController/response_incidents & dispatch_assignments tables) —
+      // best-effort, doesn't gate the optimistic UI update below.
+      void recordDispatch(id, unitId, priority, notes);
       const dispatchedAt = new Date().toISOString();
       setIncidents((prev) =>
         prev.map((inc) =>
@@ -483,7 +550,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
       ]);
       logActivity("Unit dispatched", `${unit.label} → ${inc?.location ?? id}`);
     },
-    [incidents, logActivity],
+    [incidents, logActivity, responseUnits],
   );
 
   const runSimulation = useCallback(
@@ -515,6 +582,127 @@ export function CommandProvider({ children }: { children: ReactNode }) {
 
   const clearSimulation = useCallback(() => setActiveSimulation(null), []);
 
+  const openLandslideModal = useCallback(() => setLandslideModalOpen(true), []);
+  const closeLandslideModal = useCallback(() => setLandslideModalOpen(false), []);
+
+  const runLandslideDemoAnalysis = useCallback(() => {
+    setLandslidePending(true);
+    setLandslideError(null);
+    setLandslideAnalysis(null);
+
+    let cancelled = false;
+    const poll = (analysisId: string) => {
+      if (cancelled) return;
+      getLandslideAnalysis(analysisId)
+        .then((result) => {
+          if (cancelled) return;
+          setLandslideAnalysis(result);
+          if (result.status === "completed" || result.status === "failed") {
+            setLandslidePending(false);
+            if (result.status === "completed") {
+              logActivity(
+                "Landslide analysis complete",
+                `${result.mode === "mock" ? "Mock" : "Real"} model · ${result.summary?.detections ?? 0} detection(s)`,
+              );
+            } else {
+              logActivity("Landslide analysis failed", result.error ?? "Unknown error");
+            }
+          } else {
+            setTimeout(() => poll(analysisId), 1200);
+          }
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setLandslidePending(false);
+          setLandslideError(err instanceof Error ? err.message : "Failed to poll analysis status.");
+        });
+    };
+
+    startLandslideDemoAnalysis()
+      .then((result) => {
+        if (cancelled) return;
+        setLandslideAnalysis(result);
+        logActivity("Landslide analysis started", "Demo dataset · Landslide4Sense");
+        if (result.status === "completed" || result.status === "failed") {
+          setLandslidePending(false);
+        } else {
+          setTimeout(() => poll(result.analysisId), 1200);
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setLandslidePending(false);
+        setLandslideError(
+          err instanceof Error ? err.message : "Failed to start landslide analysis.",
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [logActivity]);
+
+  const selectLandslideDetection = useCallback((id: string | null) => {
+    setSelectedLandslideDetectionId(id);
+  }, []);
+
+  const runRainfallForecast = useCallback(() => {
+    setRainfallPending(true);
+    setRainfallError(null);
+    // A new forecast invalidates any explanation of the previous one.
+    setRainfallExplanation(null);
+    setRainfallExplanationError(null);
+
+    let cancelled = false;
+    runRainfallDemoForecast()
+      .then((result) => {
+        if (cancelled) return;
+        setRainfallForecast(result);
+        setRainfallPending(false);
+        logActivity(
+          "Rainfall forecast generated",
+          `${result.mode === "demo" ? "Demo" : "Real"} model · ${result.station} · ${result.forecast.length} points`,
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setRainfallPending(false);
+        setRainfallError(err instanceof Error ? err.message : "Failed to run rainfall forecast.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [logActivity]);
+
+  const explainRainfallForecast = useCallback(() => {
+    setRainfallExplanationPending(true);
+    setRainfallExplanationError(null);
+
+    let cancelled = false;
+    explainRainfallDemoForecast(0)
+      .then((explanation) => {
+        if (cancelled) return;
+        setRainfallExplanation(explanation);
+        setRainfallExplanationPending(false);
+        logActivity(
+          "Rainfall forecast explained",
+          `SHAP · +${explanation.leadTimeMin}min · ${explanation.contributions.length} features`,
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setRainfallExplanationPending(false);
+        setRainfallExplanationError(
+          err instanceof Error ? err.message : "Failed to explain rainfall forecast.",
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [logActivity]);
+
   const resetDemo = useCallback(() => {
     setIncidents(INCIDENTS);
     setNotifications(NOTIFICATIONS);
@@ -525,6 +713,17 @@ export function CommandProvider({ children }: { children: ReactNode }) {
     setSelectedEventId(null);
     setLayers({ ...DEFAULT_LAYER_STATE });
     setResetConfirmOpen(false);
+    setLandslideAnalysis(null);
+    setLandslidePending(false);
+    setLandslideError(null);
+    setSelectedLandslideDetectionId(null);
+    setLandslideModalOpen(false);
+    setRainfallForecast(null);
+    setRainfallPending(false);
+    setRainfallError(null);
+    setRainfallExplanation(null);
+    setRainfallExplanationPending(false);
+    setRainfallExplanationError(null);
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(STORAGE_KEY);
@@ -577,6 +776,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
       acknowledgeIncident,
       updateIncidentStatus,
       dispatchUnit,
+      responseUnits,
       selectedIncidentId,
       selectIncident,
       selectedIncident,
@@ -590,6 +790,25 @@ export function CommandProvider({ children }: { children: ReactNode }) {
       activeSimulation,
       runSimulation,
       clearSimulation,
+      landslideModalOpen,
+      openLandslideModal,
+      closeLandslideModal,
+      landslideAnalysis,
+      landslidePending,
+      landslideError,
+      runLandslideDemoAnalysis,
+      selectedLandslideDetectionId,
+      selectLandslideDetection,
+      selectedLandslideDetection:
+        landslideAnalysis?.detections.find((d) => d.id === selectedLandslideDetectionId) ?? null,
+      rainfallForecast,
+      rainfallPending,
+      rainfallError,
+      runRainfallForecast,
+      rainfallExplanation,
+      rainfallExplanationPending,
+      rainfallExplanationError,
+      explainRainfallForecast,
     };
   }, [
     session,
@@ -622,6 +841,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
     acknowledgeIncident,
     updateIncidentStatus,
     dispatchUnit,
+    responseUnits,
     selectedIncidentId,
     selectIncident,
     selectedTimelineId,
@@ -630,6 +850,23 @@ export function CommandProvider({ children }: { children: ReactNode }) {
     activeSimulation,
     runSimulation,
     clearSimulation,
+    landslideModalOpen,
+    openLandslideModal,
+    closeLandslideModal,
+    landslideAnalysis,
+    landslidePending,
+    landslideError,
+    runLandslideDemoAnalysis,
+    selectedLandslideDetectionId,
+    selectLandslideDetection,
+    rainfallForecast,
+    rainfallPending,
+    rainfallError,
+    runRainfallForecast,
+    rainfallExplanation,
+    rainfallExplanationPending,
+    rainfallExplanationError,
+    explainRainfallForecast,
   ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

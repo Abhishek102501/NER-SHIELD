@@ -35,6 +35,10 @@ export const MAP_LAYERS: MapLayer[] = [
   { id: "risk-zones", label: "All Risk Zones", group: "risk", defaultOn: true },
   { id: "hazard-landslide", label: "Landslide Risk", group: "risk", defaultOn: true },
   { id: "hazard-flood", label: "Flood Risk", group: "risk", defaultOn: true },
+  // AI-detected landslide polygons from a Landslide4Sense analysis — a
+  // separate concept from "hazard-landslide" above (static susceptibility
+  // zones): these are per-analysis detections from satellite imagery.
+  { id: "landslide-detections", label: "AI Landslide Detections", group: "risk", defaultOn: true },
 
   // RESPONSE
   { id: "critical-incidents", label: "Critical Incidents", group: "response", defaultOn: true },

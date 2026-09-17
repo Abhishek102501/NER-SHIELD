@@ -13,9 +13,10 @@ import {
   Upload,
   Wifi,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FIELD_REPORTS } from "@/data/field";
 import { VILLAGES } from "@/data/infrastructure";
+import { getFieldReports, submitFieldReport } from "@/services/ops";
 import type { CvFinding, FieldReportDraft, Severity, SyncStatus } from "@/types";
 import { SEVERITY, cn } from "@/lib/utils";
 
@@ -77,9 +78,22 @@ export function FieldOfficerCard() {
   // queue state
   const [online, setOnline] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  // Renders the demo fixture immediately, then silently upgrades to the real
+  // backend queue (`GET /api/field-reports`) once it resolves — same
+  // same-first-paint pattern as the rest of the app (see services/ops.ts).
   const [reports, setReports] = useState<FieldReportDraft[]>(() =>
     FIELD_REPORTS.map((r) => ({ ...r })),
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    getFieldReports().then((fetched) => {
+      if (!cancelled) setReports(fetched);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const setStatus = (id: string, status: SyncStatus) =>
     setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
@@ -107,9 +121,12 @@ export function FieldOfficerCard() {
 
   const submit = () => {
     if (!canSubmit) return;
-    const id = `FR-${1000 + Math.floor(Math.random() * 9000)}`;
-    const draft: FieldReportDraft = {
-      id,
+    // Optimistic placeholder while the real POST /api/field-reports resolves — the
+    // backend assigns the real id, but the "queuing" state should render immediately
+    // to preserve the offline-first UX below.
+    const placeholderId = `FR-pending-${Date.now()}`;
+    const placeholder: FieldReportDraft = {
+      id: placeholderId,
       gps: gps!,
       incidentType: type,
       severity,
@@ -117,11 +134,24 @@ export function FieldOfficerCard() {
       status: "queued",
       timeAgo: "just now",
     };
-    setReports((prev) => [draft, ...prev]);
-    setCreated(id);
-    // LOCAL STORAGE → SYNCING → SYNCHRONIZED
-    window.setTimeout(() => setStatus(id, "syncing"), 1400);
-    window.setTimeout(() => setStatus(id, "synced"), 2600);
+    setReports((prev) => [placeholder, ...prev]);
+    setCreated(placeholderId);
+
+    submitFieldReport({
+      gps: gps!,
+      incidentType: type,
+      severity,
+      evidenceCount: imageUrl ? 1 : 0,
+    }).then((saved) => {
+      setReports((prev) => prev.map((r) => (r.id === placeholderId ? saved : r)));
+      setCreated((prev) => (prev === placeholderId ? saved.id : prev));
+      // LOCAL STORAGE → SYNCING → SYNCHRONIZED (offline-sync UX, applied to the
+      // now-real record)
+      window.setTimeout(() => setStatus(saved.id, "syncing"), 1400);
+      window.setTimeout(() => setStatus(saved.id, "synced"), 2600);
+      window.setTimeout(() => setCreated((prev) => (prev === saved.id ? null : prev)), 4000);
+    });
+
     // reset the form
     setDesc("");
     setGps(null);
@@ -129,7 +159,6 @@ export function FieldOfficerCard() {
     setImageUrl(null);
     setCvState("idle");
     setFindings([]);
-    window.setTimeout(() => setCreated(null), 4000);
   };
 
   const runSync = () => {
