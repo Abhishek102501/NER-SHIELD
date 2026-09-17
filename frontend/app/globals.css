@@ -49,6 +49,17 @@ html {
   }
 }
 
+/* User-controlled "Reduce motion" account preference (see lib/settings.ts) —
+   independent of the OS-level prefers-reduced-motion query above. */
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
 body {
   background-color: var(--color-ink);
   background-image:

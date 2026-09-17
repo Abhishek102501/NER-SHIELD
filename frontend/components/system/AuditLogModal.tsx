@@ -4,9 +4,10 @@ import { ClipboardList } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useCommand } from "@/lib/command-context";
 
-/** Demo Controls → Activity Log. Real actions taken this session (login,
+/** Ops Command → Activity Log. Real actions taken this session (login,
  * incident CRUD, dispatch, acknowledgements, simulations, reset) — see
- * `logActivity` in lib/command-context.tsx. Nothing here is decorative. */
+ * `logActivity` in lib/command-context.tsx. Nothing here is decorative;
+ * it is a session log, not a demo-only feature (that's Reset Demo Data). */
 export function AuditLogModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { auditLog } = useCommand();
 
@@ -14,7 +15,7 @@ export function AuditLogModal({ open, onClose }: { open: boolean; onClose: () =>
     <Modal
       open={open}
       onClose={onClose}
-      eyebrow="Demo Controls"
+      eyebrow="Ops Command"
       title="Activity Log"
       icon={<ClipboardList size={17} />}
       footer={

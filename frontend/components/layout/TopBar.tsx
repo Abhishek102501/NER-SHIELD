@@ -7,6 +7,7 @@ import {
   CheckCheck,
   ChevronDown,
   ClipboardList,
+  DatabaseZap,
   LogOut,
   MapPinned,
   RotateCcw,
@@ -16,13 +17,70 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { StatusIndicator } from "@/components/dashboard/StatusIndicator";
+import { AccountSettingsModal } from "@/components/system/AccountSettingsModal";
 import { AuditLogModal } from "@/components/system/AuditLogModal";
+import { ProfileModal } from "@/components/system/ProfileModal";
 import { SYSTEM_STATUS } from "@/data/system";
 import { useCommand } from "@/lib/command-context";
+import { useAccountSettings } from "@/lib/settings";
 import { SEVERITY, cn } from "@/lib/utils";
+
+const SEVERITY_RANK: Record<string, number> = { low: 0, moderate: 1, high: 2, critical: 3 };
+const MIN_SEVERITY_RANK: Record<string, number> = { all: -1, moderate: 1, critical: 3 };
+
+/** Honest provenance breakdown for the mixed data this platform serves.
+ * The app itself is operational (see StatusIndicator above) — this is a
+ * separate, deliberately unglamorous panel so no single source's status
+ * gets generalized to "the whole app is live" or "the whole app is a demo". */
+const DATA_SOURCES: { tag: string; label: string; detail: string; tone: "real" | "derived" | "seed" | "mock" }[] = [
+  {
+    tag: "REAL_EXTERNAL",
+    label: "Live external feeds",
+    detail: "Open-Meteo weather + trained rainfall/landslide ML inference.",
+    tone: "real",
+  },
+  {
+    tag: "DATABASE_BACKED",
+    label: "Persisted operational data",
+    detail: "Incidents, dispatches and response units in PostgreSQL/PostGIS.",
+    tone: "real",
+  },
+  {
+    tag: "USER_GENERATED",
+    label: "User-generated",
+    detail: "Field reports and incidents created in this session.",
+    tone: "real",
+  },
+  {
+    tag: "DERIVED",
+    label: "Derived layers",
+    detail: "GIS overlays computed from the above, not raw sensor output.",
+    tone: "derived",
+  },
+  {
+    tag: "DEMO_SEED",
+    label: "Seeded demo data",
+    detail: "Illustrative threats/risk zones shipped for the walkthrough.",
+    tone: "seed",
+  },
+  {
+    tag: "MOCK",
+    label: "Mock authentication",
+    detail: "Single demo Duty Officer session — no real identity provider.",
+    tone: "mock",
+  },
+];
+
+const TONE_DOT: Record<string, string> = {
+  real: "bg-sev-low",
+  derived: "bg-accent",
+  seed: "bg-sev-moderate",
+  mock: "bg-fg-dim",
+};
 
 function LiveClock() {
   const [now, setNow] = useState<Date | null>(null);
+  const [{ clockFormat }] = useAccountSettings();
   useEffect(() => {
     const initialUpdate = setTimeout(() => setNow(new Date()), 0);
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -32,7 +90,7 @@ function LiveClock() {
     };
   }, []);
   const time = now
-    ? now.toLocaleTimeString("en-GB", { hour12: false })
+    ? now.toLocaleTimeString("en-GB", { hour12: clockFormat === "12h" })
     : "--:--:--";
   const date = now
     ? now.toLocaleDateString("en-GB", {
@@ -50,15 +108,69 @@ function LiveClock() {
   );
 }
 
-function DemoBadge() {
+function DataProvenanceMenu() {
+  const [open, setOpen] = useState(false);
   return (
-    <span
-      className="hidden items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-accent md:inline-flex"
-      title="This environment runs on simulated demo/training data, not live operational feeds."
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-      Demo
-    </span>
+    <div className="relative hidden md:block">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        title="This platform mixes live external data, persisted operational data and seeded demo data — see breakdown."
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] transition-colors",
+          open
+            ? "border-accent/50 bg-accent/15 text-accent"
+            : "border-white/15 bg-white/5 text-fg-muted hover:text-fg",
+        )}
+      >
+        <DatabaseZap size={11} />
+        Data Sources
+        <ChevronDown size={10} className={cn("transition-transform", open && "rotate-180")} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <button
+              aria-label="Close data sources panel"
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-30 cursor-default"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              className="glass-float absolute left-0 top-[calc(100%+10px)] z-40 w-80 rounded-xl p-3"
+            >
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="eyebrow">Data provenance</span>
+                <span className="text-[9px] font-semibold text-sev-low">SYSTEM OPERATIONAL</span>
+              </div>
+              <p className="mb-2 px-1 text-[11px] leading-snug text-fg-muted">
+                The platform is online. Individual data sources below keep their honest
+                classification — nothing here is presented as more &ldquo;live&rdquo; than it is.
+              </p>
+              <ul className="space-y-1.5">
+                {DATA_SOURCES.map((s) => (
+                  <li key={s.tag} className="flex items-start gap-2 rounded-lg px-1 py-1">
+                    <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", TONE_DOT[s.tone])} />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-fg">
+                        {s.label}{" "}
+                        <span className="text-[9px] font-mono font-normal text-fg-dim">{s.tag}</span>
+                      </p>
+                      <p className="text-[10.5px] leading-snug text-fg-muted">{s.detail}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -66,11 +178,17 @@ function NotificationsButton() {
   const {
     notificationsOpen,
     setNotificationsOpen,
-    notifications,
-    unreadNotificationCount,
+    notifications: allNotifications,
     markNotificationRead,
     markAllNotificationsRead,
   } = useCommand();
+  const [{ minNotificationSeverity }] = useAccountSettings();
+
+  const minRank = MIN_SEVERITY_RANK[minNotificationSeverity] ?? -1;
+  const notifications = allNotifications.filter(
+    (n) => (SEVERITY_RANK[n.severity] ?? 0) >= minRank,
+  );
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div className="relative">
@@ -209,7 +327,7 @@ export function TopBar() {
             {SYSTEM_STATUS.region}
           </span>
           <span className="h-4 w-px bg-white/10" />
-          <DemoBadge />
+          <DataProvenanceMenu />
           <span className="h-4 w-px bg-white/10" />
         </div>
 
@@ -225,6 +343,8 @@ export function TopBar() {
 function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { session, sessionLoading, logout, openResetConfirm } = useCommand();
 
   const name = session?.name ?? (sessionLoading ? "…" : "Guest");
@@ -236,25 +356,34 @@ function ProfileMenu() {
     .join("")
     .toUpperCase();
 
-  const items: {
+  type MenuItem = {
     icon: typeof UserRound;
     label: string;
-    action?: () => void;
-    disabledReason?: string;
-  }[] = [
+    action: () => void;
+    /** Groups items visually with a divider + section eyebrow above the first item in the group. */
+    section?: string;
+  };
+
+  const items: MenuItem[] = [
     {
       icon: UserRound,
       label: "Profile",
-      disabledReason: "Single demo identity — nothing else to view.",
+      action: () => {
+        setProfileOpen(true);
+        setOpen(false);
+      },
     },
     {
       icon: Settings,
       label: "Account Settings",
-      disabledReason: "Not available on a demo/training account.",
+      action: () => {
+        setSettingsOpen(true);
+        setOpen(false);
+      },
     },
     {
       icon: ClipboardList,
-      label: "Demo Controls",
+      label: "Activity Log",
       action: () => {
         setAuditOpen(true);
         setOpen(false);
@@ -263,6 +392,7 @@ function ProfileMenu() {
     {
       icon: RotateCcw,
       label: "Reset Demo Data",
+      section: "Demo & dev tools",
       action: () => {
         openResetConfirm();
         setOpen(false);
@@ -271,6 +401,7 @@ function ProfileMenu() {
     {
       icon: LogOut,
       label: "Logout",
+      section: "Session",
       action: () => {
         setOpen(false);
         logout();
@@ -323,16 +454,25 @@ function ProfileMenu() {
               </div>
               <div className="my-1 h-px bg-white/8" />
               {items.map((it) => (
-                <button
-                  key={it.label}
-                  onClick={it.action}
-                  disabled={!it.action}
-                  title={it.disabledReason}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition-colors hover:bg-white/5 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-                >
-                  <it.icon size={14} />
-                  <span className="flex-1">{it.label}</span>
-                </button>
+                <div key={it.label}>
+                  {it.section && (
+                    <p className="mt-1 px-2 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-wider text-fg-dim">
+                      {it.section}
+                    </p>
+                  )}
+                  <button
+                    onClick={it.action}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+                  >
+                    <it.icon size={14} />
+                    <span className="flex-1">{it.label}</span>
+                    {it.label === "Reset Demo Data" && (
+                      <span className="rounded-full bg-sev-moderate/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-sev-moderate">
+                        Demo
+                      </span>
+                    )}
+                  </button>
+                </div>
               ))}
               <p className="px-2 pt-1 text-[9px] text-fg-dim">{session?.accountType}</p>
             </motion.div>
@@ -340,6 +480,8 @@ function ProfileMenu() {
         )}
       </AnimatePresence>
 
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <AccountSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <AuditLogModal open={auditOpen} onClose={() => setAuditOpen(false)} />
     </div>
   );
