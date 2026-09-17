@@ -1,0 +1,391 @@
+{
+  "n_samples": 2000,
+  "lead_times_min": [
+    60,
+    120,
+    180,
+    240,
+    300,
+    360,
+    420,
+    480,
+    540,
+    600,
+    660,
+    720
+  ],
+  "ranking": [
+    {
+      "feature": "tgt_rainfall_t-1",
+      "mean_abs_shap": 0.007707
+    },
+    {
+      "feature": "region_rainfall_last_mean",
+      "mean_abs_shap": 0.006644
+    },
+    {
+      "feature": "upwind_rainfall_last_mean",
+      "mean_abs_shap": 0.006577
+    },
+    {
+      "feature": "region_nwp_precip_spread",
+      "mean_abs_shap": 0.006129
+    },
+    {
+      "feature": "region_rainfall_spread",
+      "mean_abs_shap": 0.005669
+    },
+    {
+      "feature": "upwind_nwp_precip_last_mean",
+      "mean_abs_shap": 0.004841
+    },
+    {
+      "feature": "upwind_rainfall_mean",
+      "mean_abs_shap": 0.004263
+    },
+    {
+      "feature": "region_nwp_precip_last_mean",
+      "mean_abs_shap": 0.003795
+    },
+    {
+      "feature": "hour_cos",
+      "mean_abs_shap": 0.003054
+    },
+    {
+      "feature": "doy_cos",
+      "mean_abs_shap": 0.002986
+    },
+    {
+      "feature": "region_nwp_precip_last_max",
+      "mean_abs_shap": 0.002699
+    },
+    {
+      "feature": "tgt_rainfall_mean",
+      "mean_abs_shap": 0.001978
+    },
+    {
+      "feature": "hour_sin",
+      "mean_abs_shap": 0.001918
+    },
+    {
+      "feature": "upwind_nwp_precip_mean",
+      "mean_abs_shap": 0.001908
+    },
+    {
+      "feature": "tgt_nwp_precip_trend",
+      "mean_abs_shap": 0.001898
+    },
+    {
+      "feature": "doy_sin",
+      "mean_abs_shap": 0.00182
+    },
+    {
+      "feature": "region_wind_speed_mean",
+      "mean_abs_shap": 0.001803
+    },
+    {
+      "feature": "tgt_nwp_precip_accum6",
+      "mean_abs_shap": 0.001791
+    },
+    {
+      "feature": "region_wind_speed_spread",
+      "mean_abs_shap": 0.001759
+    },
+    {
+      "feature": "tgt_rainfall_accum1",
+      "mean_abs_shap": 0.001731
+    },
+    {
+      "feature": "region_wind_speed_last_mean",
+      "mean_abs_shap": 0.001715
+    },
+    {
+      "feature": "tgt_nwp_precip_accum3",
+      "mean_abs_shap": 0.001569
+    },
+    {
+      "feature": "nwp_minus_obs_mean",
+      "mean_abs_shap": 0.00141
+    },
+    {
+      "feature": "region_nwp_precip_max",
+      "mean_abs_shap": 0.001312
+    },
+    {
+      "feature": "region_rainfall_mean",
+      "mean_abs_shap": 0.001303
+    },
+    {
+      "feature": "region_stations_wet_now",
+      "mean_abs_shap": 0.001287
+    },
+    {
+      "feature": "tgt_rainfall_t-12",
+      "mean_abs_shap": 0.001242
+    },
+    {
+      "feature": "region_nwp_precip_mean",
+      "mean_abs_shap": 0.001216
+    },
+    {
+      "feature": "tgt_rainfall_accum6",
+      "mean_abs_shap": 0.00121
+    },
+    {
+      "feature": "upwind_wind_speed_mean",
+      "mean_abs_shap": 0.001185
+    },
+    {
+      "feature": "tgt_wind_speed_std",
+      "mean_abs_shap": 0.00115
+    },
+    {
+      "feature": "tgt_nwp_precip_t-1",
+      "mean_abs_shap": 0.00115
+    },
+    {
+      "feature": "tgt_wind_speed_max",
+      "mean_abs_shap": 0.001112
+    },
+    {
+      "feature": "upwind_nwp_precip_max",
+      "mean_abs_shap": 0.001088
+    },
+    {
+      "feature": "tgt_rainfall_accum3",
+      "mean_abs_shap": 0.001068
+    },
+    {
+      "feature": "tgt_rainfall_accum12",
+      "mean_abs_shap": 0.001017
+    },
+    {
+      "feature": "upwind_rainfall_max",
+      "mean_abs_shap": 0.000967
+    },
+    {
+      "feature": "region_wind_speed_max",
+      "mean_abs_shap": 0.000908
+    },
+    {
+      "feature": "upwind_wind_speed_max",
+      "mean_abs_shap": 0.000898
+    },
+    {
+      "feature": "tgt_rainfall_std",
+      "mean_abs_shap": 0.000878
+    },
+    {
+      "feature": "tgt_nwp_precip_std",
+      "mean_abs_shap": 0.000851
+    },
+    {
+      "feature": "region_rainfall_last_max",
+      "mean_abs_shap": 0.000831
+    },
+    {
+      "feature": "tgt_rainfall_max",
+      "mean_abs_shap": 0.000811
+    },
+    {
+      "feature": "tgt_rainfall_trend",
+      "mean_abs_shap": 0.000798
+    },
+    {
+      "feature": "region_rainfall_max",
+      "mean_abs_shap": 0.000785
+    },
+    {
+      "feature": "tgt_wind_speed_accum6",
+      "mean_abs_shap": 0.000754
+    },
+    {
+      "feature": "upwind_wind_speed_last_mean",
+      "mean_abs_shap": 0.000749
+    },
+    {
+      "feature": "tgt_nwp_precip_mean",
+      "mean_abs_shap": 0.000735
+    },
+    {
+      "feature": "tgt_nwp_precip_max",
+      "mean_abs_shap": 0.000727
+    },
+    {
+      "feature": "tgt_wind_speed_accum3",
+      "mean_abs_shap": 0.000669
+    },
+    {
+      "feature": "tgt_wind_speed_t-1",
+      "mean_abs_shap": 0.000613
+    },
+    {
+      "feature": "tgt_nwp_precip_t-6",
+      "mean_abs_shap": 0.000612
+    },
+    {
+      "feature": "tgt_wind_speed_mean",
+      "mean_abs_shap": 0.000603
+    },
+    {
+      "feature": "tgt_wind_speed_t-4",
+      "mean_abs_shap": 0.000564
+    },
+    {
+      "feature": "region_wind_speed_last_max",
+      "mean_abs_shap": 0.000526
+    },
+    {
+      "feature": "tgt_rainfall_t-2",
+      "mean_abs_shap": 0.000518
+    },
+    {
+      "feature": "tgt_wind_speed_t-12",
+      "mean_abs_shap": 0.000514
+    },
+    {
+      "feature": "nwp_minus_obs_last",
+      "mean_abs_shap": 0.000493
+    },
+    {
+      "feature": "tgt_rainfall_t-11",
+      "mean_abs_shap": 0.000492
+    },
+    {
+      "feature": "tgt_wind_speed_t-6",
+      "mean_abs_shap": 0.000492
+    },
+    {
+      "feature": "tgt_nwp_precip_t-7",
+      "mean_abs_shap": 0.000492
+    },
+    {
+      "feature": "tgt_nwp_precip_t-9",
+      "mean_abs_shap": 0.000484
+    },
+    {
+      "feature": "tgt_wind_speed_t-2",
+      "mean_abs_shap": 0.000476
+    },
+    {
+      "feature": "tgt_wind_speed_t-5",
+      "mean_abs_shap": 0.000476
+    },
+    {
+      "feature": "tgt_nwp_precip_t-8",
+      "mean_abs_shap": 0.000467
+    },
+    {
+      "feature": "tgt_wind_speed_trend",
+      "mean_abs_shap": 0.000463
+    },
+    {
+      "feature": "tgt_rainfall_t-3",
+      "mean_abs_shap": 0.000461
+    },
+    {
+      "feature": "tgt_wind_speed_t-11",
+      "mean_abs_shap": 0.000455
+    },
+    {
+      "feature": "tgt_rainfall_t-9",
+      "mean_abs_shap": 0.000454
+    },
+    {
+      "feature": "tgt_nwp_precip_t-5",
+      "mean_abs_shap": 0.000446
+    },
+    {
+      "feature": "tgt_wind_speed_t-8",
+      "mean_abs_shap": 0.000433
+    },
+    {
+      "feature": "tgt_wind_speed_t-7",
+      "mean_abs_shap": 0.00042
+    },
+    {
+      "feature": "tgt_nwp_precip_t-10",
+      "mean_abs_shap": 0.000402
+    },
+    {
+      "feature": "tgt_wind_speed_t-3",
+      "mean_abs_shap": 0.0004
+    },
+    {
+      "feature": "tgt_nwp_precip_t-12",
+      "mean_abs_shap": 0.000397
+    },
+    {
+      "feature": "tgt_nwp_precip_t-3",
+      "mean_abs_shap": 0.000393
+    },
+    {
+      "feature": "tgt_rainfall_t-4",
+      "mean_abs_shap": 0.000393
+    },
+    {
+      "feature": "tgt_wind_speed_t-9",
+      "mean_abs_shap": 0.000386
+    },
+    {
+      "feature": "tgt_wind_speed_accum12",
+      "mean_abs_shap": 0.000385
+    },
+    {
+      "feature": "tgt_rainfall_t-8",
+      "mean_abs_shap": 0.000384
+    },
+    {
+      "feature": "tgt_rainfall_t-5",
+      "mean_abs_shap": 0.000368
+    },
+    {
+      "feature": "tgt_rainfall_t-10",
+      "mean_abs_shap": 0.000364
+    },
+    {
+      "feature": "tgt_nwp_precip_t-11",
+      "mean_abs_shap": 0.000349
+    },
+    {
+      "feature": "tgt_nwp_precip_t-2",
+      "mean_abs_shap": 0.000348
+    },
+    {
+      "feature": "tgt_wind_speed_t-10",
+      "mean_abs_shap": 0.000332
+    },
+    {
+      "feature": "tgt_nwp_precip_t-4",
+      "mean_abs_shap": 0.000331
+    },
+    {
+      "feature": "tgt_rainfall_t-7",
+      "mean_abs_shap": 0.000317
+    },
+    {
+      "feature": "tgt_rainfall_t-6",
+      "mean_abs_shap": 0.000303
+    },
+    {
+      "feature": "tgt_nwp_precip_accum12",
+      "mean_abs_shap": 0.000281
+    },
+    {
+      "feature": "tgt_nwp_precip_accum1",
+      "mean_abs_shap": 0.000247
+    },
+    {
+      "feature": "tgt_wind_speed_accum1",
+      "mean_abs_shap": 0.00014
+    },
+    {
+      "feature": "month",
+      "mean_abs_shap": 0.000137
+    },
+    {
+      "feature": "tgt_elevation_m",
+      "mean_abs_shap": 0.0
+    }
+  ]
+}

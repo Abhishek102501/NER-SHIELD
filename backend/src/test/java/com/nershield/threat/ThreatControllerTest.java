@@ -58,12 +58,14 @@ class ThreatControllerTest {
 
     @Test
     void eventWithoutGeoContextIsMarkedLocationUnavailable() throws Exception {
-        // det-007 in DemoDetectionSource has no GeoContext at all.
+        // det-007's seed data (see DemoDataSeeder) has no location at all. Selected by id,
+        // not array index — events are ordered by detectedAt desc (most recent first), so
+        // its position shifts as seed timestamps age relative to each other.
+        String jsonPathPrefix = "$.events[?(@.id=='det-007')]";
         mockMvc.perform(get("/api/threats"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.events[6].id").value("det-007"))
-                .andExpect(jsonPath("$.events[6].locationAvailable").value(false))
-                .andExpect(jsonPath("$.events[6].latitude").doesNotExist())
-                .andExpect(jsonPath("$.events[6].longitude").doesNotExist());
+                .andExpect(jsonPath(jsonPathPrefix + ".locationAvailable").value(false))
+                .andExpect(jsonPath(jsonPathPrefix + ".latitude").doesNotExist())
+                .andExpect(jsonPath(jsonPathPrefix + ".longitude").doesNotExist());
     }
 }

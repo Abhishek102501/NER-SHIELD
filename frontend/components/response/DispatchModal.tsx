@@ -3,7 +3,7 @@
 import { CheckCircle2, Send, Truck } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { PRIORITY_LEVELS, RESPONSE_UNITS } from "@/data/response";
+import { PRIORITY_LEVELS } from "@/data/response";
 import { useCommand } from "@/lib/command-context";
 import { SEVERITY, cn } from "@/lib/utils";
 
@@ -15,7 +15,8 @@ const SEVERITY_TO_PRIORITY: Record<string, (typeof PRIORITY_LEVELS)[number]> = {
 };
 
 export function DispatchModal() {
-  const { dispatchTargetId, closeDispatch, incidents, dispatchUnit, permissions } = useCommand();
+  const { dispatchTargetId, closeDispatch, incidents, dispatchUnit, responseUnits, permissions } =
+    useCommand();
   const incident = incidents.find((i) => i.id === dispatchTargetId) ?? null;
   const open = !!incident;
 
@@ -25,7 +26,7 @@ export function DispatchModal() {
   const [dispatching, setDispatching] = useState(false);
   const [done, setDone] = useState(false);
 
-  const unit = RESPONSE_UNITS.find((u) => u.id === unitId);
+  const unit = responseUnits.find((u) => u.id === unitId);
   const canDispatch = !!unit && permissions.dispatch;
 
   function handleClose() {
@@ -111,7 +112,7 @@ export function DispatchModal() {
               <option value="" disabled>
                 Select unit…
               </option>
-              {RESPONSE_UNITS.map((u) => (
+              {responseUnits.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.label} · {u.base}
                 </option>

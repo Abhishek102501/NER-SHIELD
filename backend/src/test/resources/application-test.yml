@@ -1,7 +1,11 @@
 # Test profile: boots the full application context without a PostgreSQL/PostGIS server.
-# An in-memory H2 database stands in for the datasource and Flyway is disabled, because
-# the migrations are PostGIS-specific. Tests that exercise real spatial SQL will need a
-# PostgreSQL instance and should declare it explicitly.
+# An in-memory H2 database (H2GIS-compatible spatial mode, via hibernate-spatial's
+# H2GisDialectContributor) stands in for the datasource. Flyway stays disabled because the
+# versioned migrations are PostGIS-specific SQL; instead Hibernate generates a matching
+# schema straight from the JPA entities (create-drop, fresh per test context) so
+# JPA-backed sources have real tables to read/write in tests. Tests that exercise real
+# PostGIS-specific SQL (not just JTS geometry types) need a real PostgreSQL instance and
+# should declare it explicitly.
 spring:
   datasource:
     url: jdbc:h2:mem:nershield;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
@@ -10,7 +14,7 @@ spring:
     password: ""
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: create-drop
   flyway:
     enabled: false
 

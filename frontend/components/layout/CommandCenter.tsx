@@ -2,8 +2,10 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutPanelLeft, PanelRightOpen, Radar } from "lucide-react";
+import { LandslideAnalysisModal } from "@/components/landslide/LandslideAnalysisModal";
 import { CommandMap } from "@/components/map/CommandMap";
 import { MapLegend } from "@/components/map/MapLegend";
+import { AgentAssistantPanel } from "@/components/agent/AgentAssistantPanel";
 import { FieldReportModal } from "@/components/reports/FieldReportModal";
 import { DispatchModal } from "@/components/response/DispatchModal";
 import { SimulationModal } from "@/components/simulation/SimulationModal";
@@ -135,11 +137,15 @@ function Shell() {
         </>
       )}
 
+      {/* AI Disaster Response Agent — self-contained floating trigger + drawer */}
+      <AgentAssistantPanel />
+
       {/* Modals */}
       <SimulationModal />
       <FieldReportModal />
       <DispatchModal />
       <ResetDemoModal />
+      <LandslideAnalysisModal />
     </div>
   );
 }

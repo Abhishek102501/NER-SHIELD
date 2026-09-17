@@ -26,6 +26,43 @@ export const riskZoneByIdUrl = (id: string) =>
 /** GET /api/incidents — real backend, same origin/rationale as THREATS_URL above. */
 export const INCIDENTS_URL = `${BACKEND_BASE_URL}/api/incidents`;
 
+/** POST /api/landslide/analyze, GET /api/landslide/health — real backend, proxying the
+ * Python AI service's Landslide4Sense module. Same origin/rationale as THREATS_URL above. */
+export const LANDSLIDE_ANALYZE_URL = `${BACKEND_BASE_URL}/api/landslide/analyze`;
+export const LANDSLIDE_HEALTH_URL = `${BACKEND_BASE_URL}/api/landslide/health`;
+export const landslideAnalysisUrl = (analysisId: string) =>
+  `${BACKEND_BASE_URL}/api/landslide/analysis/${encodeURIComponent(analysisId)}`;
+
+/** POST /api/rainfall/forecast/demo, GET /api/rainfall/health — real backend, proxying the
+ * Python AI service's Mumbai rainfall LSTM. Same origin/rationale as THREATS_URL above. */
+export const RAINFALL_FORECAST_DEMO_URL = `${BACKEND_BASE_URL}/api/rainfall/forecast/demo`;
+export const RAINFALL_HEALTH_URL = `${BACKEND_BASE_URL}/api/rainfall/health`;
+export const RAINFALL_EXPLAIN_DEMO_URL = `${BACKEND_BASE_URL}/api/rainfall/explain/demo`;
+
+/** GET/POST /api/field-reports — real backend. Same origin/rationale as THREATS_URL above. */
+export const FIELD_REPORTS_BACKEND_URL = `${BACKEND_BASE_URL}/api/field-reports`;
+
+/** GET /api/response/incidents, GET /api/response/units, POST /api/response/dispatch —
+ * real backend. Same origin/rationale as THREATS_URL above. */
+export const RESPONSE_INCIDENTS_URL = `${BACKEND_BASE_URL}/api/response/incidents`;
+export const RESPONSE_UNITS_URL = `${BACKEND_BASE_URL}/api/response/units`;
+export const RESPONSE_DISPATCH_URL = `${BACKEND_BASE_URL}/api/response/dispatch`;
+
+/** GET /api/gis/layers/{id} — real backend. Same origin/rationale as THREATS_URL above. */
+export const gisLayerBackendUrl = (id: string) =>
+  `${BACKEND_BASE_URL}/api/gis/layers/${encodeURIComponent(id)}`;
+
+/** GET /api/weather/current — real backend (Open-Meteo). Same origin/rationale as
+ * THREATS_URL above. Unlike the other real domains, there is no local-fixture fallback:
+ * an unreachable/unconfigured backend surfaces as `available: false`, never fake weather. */
+export const weatherCurrentUrl = (latitude: number, longitude: number) =>
+  `${BACKEND_BASE_URL}/api/weather/current?latitude=${latitude}&longitude=${longitude}`;
+
+/** POST /api/agent/query — real backend, proxying agent-service (LLM + tools + RAG). Same
+ * origin/rationale as THREATS_URL above. No local fallback: an unavailable agent surfaces
+ * as `available: false`, never a fabricated answer. */
+export const AGENT_QUERY_URL = `${BACKEND_BASE_URL}/api/agent/query`;
+
 export const ENDPOINTS = {
   riskZones: () => `${API_BASE}/risk/zones`,
   riskById: (id: string) => `${API_BASE}/risk/${id}`,

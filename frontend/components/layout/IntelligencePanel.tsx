@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { CloudRain, Droplets, PanelRightClose, TrendingUp } from "lucide-react";
+import { CurrentConditionsCard } from "@/components/charts/CurrentConditionsCard";
 import { WeatherChart } from "@/components/charts/WeatherChart";
 import { ImpactSummary } from "@/components/risk/ImpactSummary";
 import { RiskFactors } from "@/components/risk/RiskFactors";
@@ -55,6 +56,13 @@ export function IntelligencePanel({ onCollapse }: { onCollapse: () => void }) {
         <section>
           <SectionLabel>Risk Factors</SectionLabel>
           <RiskFactors />
+        </section>
+
+        {/* Live conditions — real backend (Open-Meteo), separate from the
+            demonstration rainfall/soil-moisture data below. */}
+        <section>
+          <SectionLabel>Live Conditions</SectionLabel>
+          <CurrentConditionsCard />
         </section>
 
         {/* Weather */}

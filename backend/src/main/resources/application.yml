@@ -60,6 +60,20 @@ nershield:
     connect-timeout: 5s
     read-timeout: 30s
 
+  agent:
+    # The agent-service FastAPI process (see agent-service/README.md) — a separate
+    # process this backend proxies to, never a database/LLM/tool caller itself.
+    base-url: ${AGENT_SERVICE_BASE_URL:http://localhost:8100}
+    connect-timeout: 5s
+    read-timeout: 20s
+
+  weather:
+    # "open-meteo" (default provider, needs no API key) or "none" (disables the endpoint —
+    # GET /api/weather/current then honestly returns available=false instead of fabricating
+    # a reading). See WeatherService/WeatherProperties.
+    provider: ${WEATHER_PROVIDER:open-meteo}
+    base-url: ${WEATHER_API_URL:https://api.open-meteo.com}
+
   security:
     jwt:
       issuer: ${JWT_ISSUER:ner-shield}

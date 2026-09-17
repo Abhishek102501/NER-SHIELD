@@ -222,6 +222,15 @@ export const VILLAGES: FC = pointsToFC(VILLAGES_DATA);
 export const SCHOOLS: FC = pointsToFC(SCHOOLS_DATA);
 export const INFRASTRUCTURE: FC = pointsToFC(INFRASTRUCTURE_POINTS);
 
+/**
+ * DEMO_SEED fallback only. The backend now serves a genuinely DERIVED version of this layer
+ * at `GET /api/gis/layers/incident-points` — built live from the `incidents` table's own
+ * `location` column (see `GisLayerService.incidentPointsFeatureCollection()`), not from a
+ * hardcoded list. That backend version currently returns an EMPTY FeatureCollection, because
+ * no seeded incident has ever carried a real lat/lon (see `IncidentEntity`'s javadoc) — the
+ * four coordinates below were invented for this frontend-only fixture and are honest only as
+ * a last-resort visual fallback, never as "this incident's real location".
+ */
 export const INCIDENT_POINTS: FC = {
   type: "FeatureCollection",
   features: [
@@ -236,7 +245,17 @@ export const INCIDENT_POINTS: FC = {
   })),
 };
 
-/** Rainfall intensity overlay (heat points). */
+/**
+ * DEMO_SEED — a purely synthetic, procedurally-generated decorative heatmap (a ring of
+ * points with pseudo-random "intensity" values around the map center). NOT derived from the
+ * real rainfall LSTM+XGBoost model (`ml-service/src/nershield_ml/northeast_rainfall/`,
+ * served for real at `POST /api/rainfall/forecast/demo`) or any other rainfall dataset — it
+ * shares no code path or data with it. Deliberately not persisted to PostgreSQL: unlike
+ * every other GIS layer, there is no real-world referent to preserve provenance for, so
+ * storing it would only relocate synthetic noise, not make it more real. Kept in the
+ * frontend, clearly labeled, as visual texture only — never present this as observed or
+ * modeled rainfall intensity.
+ */
 export const RAINFALL_OVERLAY: FC = {
   type: "FeatureCollection",
   features: Array.from({ length: 26 }, (_, i) => {

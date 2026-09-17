@@ -9,14 +9,35 @@ import type {
   Incident,
   ResponseIncident,
   Severity,
+  SyncStatus,
 } from "@/types";
-import { ENDPOINTS, INCIDENTS_URL } from "./endpoints";
+import { ENDPOINTS, FIELD_REPORTS_BACKEND_URL, INCIDENTS_URL } from "./endpoints";
 import { request } from "./http";
 
 const VALID_SEVERITIES: readonly string[] = ["low", "moderate", "high", "critical"];
+const VALID_SYNC_STATUSES: readonly string[] = ["offline", "queued", "syncing", "synced"];
 
 function isSeverity(value: unknown): value is Severity {
   return typeof value === "string" && VALID_SEVERITIES.includes(value);
+}
+
+function isSyncStatus(value: unknown): value is SyncStatus {
+  return typeof value === "string" && VALID_SYNC_STATUSES.includes(value);
+}
+
+/** Structural check that a value is shaped like a {@link FieldReportDraft}. */
+function isFieldReportDraft(value: unknown): value is FieldReportDraft {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.id === "string" &&
+    typeof v.gps === "string" &&
+    typeof v.incidentType === "string" &&
+    isSeverity(v.severity) &&
+    typeof v.evidenceCount === "number" &&
+    isSyncStatus(v.status) &&
+    typeof v.timeAgo === "string"
+  );
 }
 
 /** Structural check that a value is shaped like an {@link Incident} (see `types/index.ts`). */
@@ -79,25 +100,89 @@ export function getResponseQueue(): Promise<ResponseIncident[]> {
   return request(ENDPOINTS.incidents(), RESPONSE_INCIDENTS);
 }
 
-/** GET /api/v1/field-reports */
-export function getFieldReports(): Promise<FieldReportDraft[]> {
-  return request(ENDPOINTS.fieldReports(), FIELD_REPORTS);
+/**
+ * GET /api/field-reports — real backend (`backend/.../fieldreport/FieldReportController`).
+ * Falls back to the local `FIELD_REPORTS` fixture, unchanged, if the backend is
+ * unreachable, times out, or returns something that doesn't validate — mirroring
+ * `getThreats()`/`getIncidents()` above.
+ */
+export async function getFieldReports(): Promise<FieldReportDraft[]> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    let res: Response;
+    try {
+      res = await fetch(FIELD_REPORTS_BACKEND_URL, { signal: controller.signal, cache: "no-store" });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!res.ok) {
+      throw new Error(`GET ${FIELD_REPORTS_BACKEND_URL} -> ${res.status}`);
+    }
+
+    const json: unknown = await res.json();
+    if (!Array.isArray(json) || !json.every(isFieldReportDraft)) {
+      throw new Error("Malformed /api/field-reports response");
+    }
+    return json;
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[field-reports] backend unavailable, using demonstration data:", err);
+    }
+    return FIELD_REPORTS;
+  }
 }
 
-/** POST /api/v1/field-reports (mock echo) */
-export function submitFieldReport(
+/**
+ * POST /api/field-reports — real backend. Falls back to a local mock echo (unchanged
+ * behavior) if the backend is unreachable, times out, or returns something that doesn't
+ * validate, so the field-report form still works offline/demo-only.
+ */
+export async function submitFieldReport(
   draft: Omit<FieldReportDraft, "id" | "status" | "timeAgo">,
 ): Promise<FieldReportDraft> {
-  const created: FieldReportDraft = {
-    ...draft,
-    id: `FR-${1000 + Math.floor(Math.random() * 9000)}`,
-    status: "queued",
-    timeAgo: "just now",
-  };
-  return request(ENDPOINTS.fieldReports(), created, {
-    delay: 300,
-    method: "POST",
-  });
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    let res: Response;
+    try {
+      res = await fetch(FIELD_REPORTS_BACKEND_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!res.ok) {
+      throw new Error(`POST ${FIELD_REPORTS_BACKEND_URL} -> ${res.status}`);
+    }
+
+    const json: unknown = await res.json();
+    if (!isFieldReportDraft(json)) {
+      throw new Error("Malformed POST /api/field-reports response");
+    }
+    return json;
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[field-reports] backend unavailable, using local mock submission:", err);
+    }
+    const created: FieldReportDraft = {
+      ...draft,
+      id: `FR-${1000 + Math.floor(Math.random() * 9000)}`,
+      status: "queued",
+      timeAgo: "just now",
+    };
+    return request(ENDPOINTS.fieldReports(), created, {
+      delay: 300,
+      method: "POST",
+    });
+  }
 }
 
 /** GET /api/v1/alerts */

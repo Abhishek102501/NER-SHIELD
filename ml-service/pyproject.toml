@@ -17,6 +17,12 @@ dependencies = [
     "pydantic-settings>=2.5",
     "pyarrow>=17.0",
     "joblib>=1.4",
+    # Landslide4Sense U-Net segmentation module (see landslide4sense/README.md).
+    # scipy is already a rasterio/geopandas transitive dependency, pinned here
+    # explicitly because we now import it directly for morphological cleanup.
+    "torch>=2.2",
+    "scipy>=1.11",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]

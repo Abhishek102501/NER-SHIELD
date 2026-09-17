@@ -1,6 +1,9 @@
 package com.nershield.common;
 
+import com.nershield.agent.AgentServiceException;
 import com.nershield.common.ApiErrorResponse.ValidationError;
+import com.nershield.landslide.LandslideServiceException;
+import com.nershield.rainfall.RainfallServiceException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -87,6 +90,36 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    /** The Python AI service is unreachable or errored — a dependency outage, not a bug here. */
+    @ExceptionHandler(LandslideServiceException.class)
+    public ResponseEntity<ApiErrorResponse> handleLandslideServiceException(
+            LandslideServiceException ex, HttpServletRequest request) {
+        log.warn("Landslide4Sense service call failed: {}", ex.getMessage());
+        return build(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Landslide analysis service is currently unavailable.",
+                request);
+    }
+
+    /** The Python AI service is unreachable or errored — a dependency outage, not a bug here. */
+    @ExceptionHandler(RainfallServiceException.class)
+    public ResponseEntity<ApiErrorResponse> handleRainfallServiceException(
+            RainfallServiceException ex, HttpServletRequest request) {
+        log.warn("Mumbai rainfall service call failed: {}", ex.getMessage());
+        return build(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Rainfall forecasting service is currently unavailable.",
+                request);
+    }
+
+    /** The agent-service process is unreachable or errored — a dependency outage, not a bug here. */
+    @ExceptionHandler(AgentServiceException.class)
+    public ResponseEntity<ApiErrorResponse> handleAgentServiceException(
+            AgentServiceException ex, HttpServletRequest request) {
+        log.warn("Agent service call failed: {}", ex.getMessage());
+        return build(HttpStatus.SERVICE_UNAVAILABLE, "AI agent service is currently unavailable.", request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
